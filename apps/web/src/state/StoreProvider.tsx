@@ -4,9 +4,9 @@ import {
   createContext,
   useContext,
   useEffect,
-  useEffectEvent,
   useMemo,
-  useReducer,
+  useState,
+  useSyncExternalStore,
   type Dispatch,
   type ReactNode,
 } from "react";
@@ -19,7 +19,8 @@ import {
 } from "@/lib/preferences";
 import { applyAccent, applyTheme } from "@/lib/theme";
 import { createCommands, type Commands } from "./commands";
-import { initialState, reducer } from "./reducer";
+import { initialState } from "./reducer";
+import { createStore } from "./store";
 import type { Action, AppState } from "./types";
 import { useJobPolling } from "./useJobPolling";
 
@@ -46,18 +47,16 @@ export function StoreProvider({
 }: {
   children: ReactNode;
 }): ReactNode {
-  const [state, dispatch] = useReducer(reducer, undefined, createInitialState);
-  const commands = useMemo(
-    () => createCommands(dispatch, () => state),
-    [dispatch, state],
+  const [store] = useState(() => createStore(createInitialState()));
+  const [commands] = useState(() =>
+    createCommands(store.dispatch, store.getState),
   );
+  const state = useSyncExternalStore(store.subscribe, store.getState);
+  const { dispatch } = store;
 
-  const bootstrap = useEffectEvent(() => {
-    void commands.loadServerState();
-  });
   useEffect(() => {
-    bootstrap();
-  }, []);
+    void commands.loadServerState();
+  }, [commands]);
 
   useEffect(() => {
     savePreferences(state.preferences);
@@ -91,7 +90,7 @@ export function StoreProvider({
 
   const value = useMemo(
     () => ({ state, dispatch, commands }),
-    [state, commands],
+    [state, dispatch, commands],
   );
   return (
     <StoreContext.Provider value={value}>

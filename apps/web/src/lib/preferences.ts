@@ -25,6 +25,11 @@ function write(key: string, value: unknown): boolean {
   }
 }
 
+function readArray<T>(key: string): T[] {
+  const value = read<unknown>(key, []);
+  return Array.isArray(value) ? (value as T[]) : [];
+}
+
 export function loadPersisted(): {
   preferences: Preferences;
   items: QueueItem[];
@@ -36,10 +41,10 @@ export function loadPersisted(): {
       ...DEFAULT_PREFERENCES,
       ...(typeof stored === 'object' && stored !== null ? stored : {}),
     },
-    items: read<QueueItem[]>(ITEMS_STORAGE_KEY, []).filter(
+    items: readArray<QueueItem>(ITEMS_STORAGE_KEY).filter(
       (item) => item.type === 'ready' || item.type === 'job',
     ),
-    history: read<HistoryEntry[]>(HISTORY_STORAGE_KEY, []),
+    history: readArray<HistoryEntry>(HISTORY_STORAGE_KEY),
   };
 }
 

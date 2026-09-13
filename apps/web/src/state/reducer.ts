@@ -116,10 +116,15 @@ function mergeJob(existing: JobItem | undefined, job: Job): JobItem {
     formats: [],
     options: draftFromJob(job),
     job,
+    linkedAt: 0,
   };
 }
 
-function syncJobs(state: AppState, jobs: readonly Job[]): AppState {
+function syncJobs(
+  state: AppState,
+  jobs: readonly Job[],
+  requestedAt: number,
+): AppState {
   const liveJobs = jobs.filter((job) => job.status !== 'cancelled');
   const jobIds = new Set(liveJobs.map((job) => job.job_id));
   const existingJobs = new Map(
@@ -128,7 +133,10 @@ function syncJobs(state: AppState, jobs: readonly Job[]): AppState {
       .map((item) => [item.id, item]),
   );
   const kept = state.items.filter(
-    (item) => item.type !== 'job' || jobIds.has(item.id),
+    (item) =>
+      item.type !== 'job' ||
+      jobIds.has(item.id) ||
+      item.linkedAt >= requestedAt,
   );
   const known = new Set(kept.map((item) => item.id));
   const adopted = liveJobs
@@ -153,7 +161,12 @@ function syncJobs(state: AppState, jobs: readonly Job[]): AppState {
   return { ...state, items: [...adopted, ...merged], history };
 }
 
-function startDownload(state: AppState, itemId: string, job: Job): AppState {
+function startDownload(
+  state: AppState,
+  itemId: string,
+  job: Job,
+  linkedAt: number,
+): AppState {
   const item = state.items.find((candidate) => candidate.id === itemId);
   if (!item || item.type !== 'ready') return state;
   const next: JobItem = {
@@ -163,6 +176,7 @@ function startDownload(state: AppState, itemId: string, job: Job): AppState {
     formats: item.formats,
     options: item.options,
     job,
+    linkedAt,
   };
   return {
     ...state,
@@ -245,11 +259,11 @@ export function reducer(state: AppState, action: Action): AppState {
         selectedId: state.selectedId === action.id ? null : state.selectedId,
       };
     case 'download/started':
-      return startDownload(state, action.itemId, action.job);
+      return startDownload(state, action.itemId, action.job, action.linkedAt);
     case 'job/cancelled':
       return cancelJob(state, action.jobId);
     case 'jobs/synced':
-      return syncJobs(state, action.jobs);
+      return syncJobs(state, action.jobs, action.requestedAt);
     case 'history/cleared':
       return { ...state, history: [] };
     case 'view/changed':

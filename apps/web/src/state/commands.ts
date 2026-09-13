@@ -80,7 +80,9 @@ export function createCommands(
   };
 
   const syncJobs = async (): Promise<void> => {
-    dispatch({ type: 'jobs/synced', jobs: await api.jobs() });
+    const requestedAt = Date.now();
+    const jobs = await api.jobs();
+    dispatch({ type: 'jobs/synced', jobs, requestedAt });
   };
 
   const startDownload = async (itemId: string): Promise<void> =>
@@ -90,7 +92,7 @@ export function createCommands(
       );
       if (!item || item.type !== 'ready') return;
       const { job } = await api.download(toDownloadRequest(item));
-      dispatch({ type: 'download/started', itemId, job });
+      dispatch({ type: 'download/started', itemId, job, linkedAt: Date.now() });
     });
 
   return {

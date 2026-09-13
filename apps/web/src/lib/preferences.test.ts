@@ -59,4 +59,12 @@ describe('preferences', () => {
     expect(restored.items.map((item) => item.id)).toEqual(['r']);
     expect(restored.history).toHaveLength(1);
   });
+
+  it('falls back to empty lists when the queue or history holds non-array JSON', () => {
+    window.localStorage.setItem('openmedia.queue', '{}');
+    window.localStorage.setItem('openmedia.history', '{}');
+    const restored = loadPersisted();
+    expect(restored.items).toEqual([]);
+    expect(restored.history).toEqual([]);
+  });
 });

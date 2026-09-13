@@ -115,6 +115,7 @@ describe('reducer', () => {
       type: 'download/started',
       itemId: 'r1',
       job: job(),
+      linkedAt: 0,
     });
     expect(started.items[0]).toMatchObject({ type: 'job', id: 'j1' });
     expect(started.selectedId).toBe('j1');
@@ -130,6 +131,7 @@ describe('reducer', () => {
           finished_at: '2026-09-14T08:05:00Z',
         }),
       ],
+      requestedAt: 0,
     });
     expect(done.items[0]).toMatchObject({ job: { status: 'done' } });
     expect(done.history).toEqual([
@@ -146,6 +148,7 @@ describe('reducer', () => {
     const again = reducer(done, {
       type: 'jobs/synced',
       jobs: [job({ status: 'done', finished_at: '2026-09-14T08:05:00Z' })],
+      requestedAt: 0,
     });
     expect(again.history).toHaveLength(1);
   });
@@ -154,15 +157,16 @@ describe('reducer', () => {
     const adopted = reducer(initialState(), {
       type: 'jobs/synced',
       jobs: [job({ job_id: 'remote', status: 'queued' })],
+      requestedAt: 0,
     });
     expect(adopted.items[0]).toMatchObject({
       type: 'job',
       id: 'remote',
       media: { title: 'Pho', platform: 'youtube' },
     });
-    expect(reducer(adopted, { type: 'jobs/synced', jobs: [] }).items).toEqual(
-      [],
-    );
+    expect(
+      reducer(adopted, { type: 'jobs/synced', jobs: [], requestedAt: 1 }).items,
+    ).toEqual([]);
   });
 
   it('ignores cancelled jobs from the server', () => {
@@ -170,6 +174,7 @@ describe('reducer', () => {
       reducer(initialState(), {
         type: 'jobs/synced',
         jobs: [job({ status: 'cancelled' })],
+        requestedAt: 0,
       }).items,
     ).toEqual([]);
   });
@@ -179,6 +184,7 @@ describe('reducer', () => {
       type: 'download/started',
       itemId: 'r1',
       job: job(),
+      linkedAt: 0,
     });
     const cancelled = reducer(started, { type: 'job/cancelled', jobId: 'j1' });
     expect(cancelled.items[0]).toMatchObject({
@@ -193,6 +199,7 @@ describe('reducer', () => {
       type: 'download/started',
       itemId: 'r1',
       job: job(),
+      linkedAt: 0,
     });
     const withError = reducer(started, {
       type: 'fetch/started',
@@ -216,6 +223,27 @@ describe('reducer', () => {
       filter: 'error',
     });
     expect(visibleItems(filtered).map((item) => item.id)).toEqual(['e']);
+  });
+
+  it('keeps a linked job until a poll requested after it can vouch for its absence', () => {
+    const started = reducer(withReadyItem(), {
+      type: 'download/started',
+      itemId: 'r1',
+      job: job(),
+      linkedAt: 1000,
+    });
+    const racedAway = reducer(started, {
+      type: 'jobs/synced',
+      jobs: [],
+      requestedAt: 500,
+    });
+    expect(racedAway.items[0]).toMatchObject({ type: 'job', id: 'j1' });
+    const trulyGone = reducer(racedAway, {
+      type: 'jobs/synced',
+      jobs: [],
+      requestedAt: 1500,
+    });
+    expect(trulyGone.items).toEqual([]);
   });
 
   it('clears history and shows notices', () => {

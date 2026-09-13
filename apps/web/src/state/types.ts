@@ -72,6 +72,7 @@ export interface JobItem {
   readonly formats: readonly MediaFormat[];
   readonly options: DraftOptions;
   readonly job: Job;
+  readonly linkedAt: number;
 }
 
 export type QueueItem = FetchingItem | FetchErrorItem | ReadyItem | JobItem;
@@ -144,9 +145,14 @@ export type Action =
       readonly type: 'download/started';
       readonly itemId: string;
       readonly job: Job;
+      readonly linkedAt: number;
     }
   | { readonly type: 'job/cancelled'; readonly jobId: string }
-  | { readonly type: 'jobs/synced'; readonly jobs: readonly Job[] }
+  | {
+      readonly type: 'jobs/synced';
+      readonly jobs: readonly Job[];
+      readonly requestedAt: number;
+    }
   | { readonly type: 'history/cleared' }
   | {
       readonly type: 'view/changed';
