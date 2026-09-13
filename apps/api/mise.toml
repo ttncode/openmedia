@@ -43,3 +43,7 @@ run = [
 
 [tasks.checklist]
 run = [{ task = ":ci-unit" }, { task = ":build" }]
+
+[tasks.dev]
+env = { OPENMEDIA_DATA_DIR = "./data", OPENMEDIA_TRUSTED_PROXY_HOPS = "1" }
+run = "uv run flask --app 'app:create_app()' run --port 8081 --debug"

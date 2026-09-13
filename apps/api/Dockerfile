@@ -9,14 +9,25 @@ COPY pyproject.toml uv.lock .python-version ./
 RUN uv sync --locked --no-dev --no-install-project
 
 FROM python:3.13-slim@sha256:9d2e5553305c7c7b0097999bb17187c69b921ccd6bc9d40e4bb5ebe652c00285 AS runtime
+RUN apt-get update \
+    && apt-get install --yes --no-install-recommends ffmpeg ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
+COPY --from=deps /usr/local/bin/uv /usr/local/bin/uv
 COPY --from=deps /app/.venv ./.venv
 COPY . .
-ENV PATH="/app/.venv/bin:${PATH}"
-RUN useradd --create-home --uid 10001 app
+ENV PATH="/app/.venv/bin:${PATH}" \
+    OPENMEDIA_DATA_DIR=/data \
+    UV_CACHE_DIR=/data/.cache/uv \
+    PYTHONUNBUFFERED=1
+RUN useradd --create-home --uid 10001 app \
+    && mkdir -p /data/downloads \
+    && chown -R app:app /data \
+    && chmod 0755 /app/docker-entrypoint.sh
 USER app
+VOLUME ["/data"]
 EXPOSE 8080
-# python, not wget or curl: the slim image ships neither.
 HEALTHCHECK --interval=30s --timeout=3s \
   CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/health/live')" || exit 1
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "app:create_app()"]
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
+CMD ["gunicorn", "--workers", "1", "--threads", "8", "--timeout", "120", "--bind", "0.0.0.0:8080", "--access-logfile", "-", "app:create_app()"]

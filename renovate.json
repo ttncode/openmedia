@@ -5,5 +5,12 @@
     "helpers:pinGitHubActionDigests",
     "docker:pinDigests"
   ],
-  "minimumReleaseAge": "3 days"
+  "minimumReleaseAge": "3 days",
+  "packageRules": [
+    {
+      "matchPackageNames": ["yt-dlp", "yt-dlp-ejs"],
+      "minimumReleaseAge": "0 days",
+      "groupName": "yt-dlp"
+    }
+  ]
 }

@@ -15,7 +15,7 @@ pre-commit:
     ruff-apps-api:
       glob: '*.py'
       root: apps/api/
-      run: uv run ruff format {staged_files}
+      run: mise exec -- uv run ruff format {staged_files}
       stage_fixed: true
 commit-msg:
   commands:

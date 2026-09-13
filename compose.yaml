@@ -13,9 +13,14 @@ services:
     env_file:
       - path: .env
         required: false
+    environment:
+      API_URL: http://api:8080
     restart: always
     ports:
       - '${WEB_PORT:-8080}:8080'
+    depends_on:
+      api:
+        condition: service_healthy
   api:
     image: ghcr.io/ttncode/openmedia-api:${IMAGE_TAG:-latest}
     env_file:
@@ -23,4 +28,8 @@ services:
         required: false
     restart: always
     ports:
-      - '${API_PORT:-8081}:8080'
+      - '127.0.0.1:${API_PORT:-8081}:8080'
+    volumes:
+      - openmedia-data:/data
+volumes:
+  openmedia-data:
