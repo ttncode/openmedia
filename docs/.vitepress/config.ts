@@ -6,6 +6,7 @@ export default defineConfig({
   head: [['link', { rel: 'icon', href: '/logo.png' }]],
   // a dead link is a failed build, not a warning
   ignoreDeadLinks: false,
+  srcExclude: ['superpowers/**'],
   themeConfig: {
     logo: '/logo.png',
     sidebar: [
