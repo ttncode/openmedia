@@ -1,24 +1,24 @@
+import hashlib
 import hmac
 import math
-import os
 import secrets
 import threading
 import time
 from collections.abc import Callable
 from urllib.parse import urlsplit
 
-from flask import Flask, request, session
+from flask import Flask, current_app, request, session
 from flask.sessions import SecureCookieSessionInterface
 
 from .config import Settings
 from .errors import ApiError
+from .private_files import write_private_text
 
 AUTHENTICATED_SESSION_KEY = "openmedia_authenticated"
 SAFE_METHODS = frozenset({"GET", "HEAD", "OPTIONS"})
 CROSS_SITE_FETCH_VALUES = frozenset({"cross-site", "same-site"})
 SECONDS_PER_MINUTE = 60.0
 SECRET_KEY_BYTES = 32
-PRIVATE_FILE_MODE = 0o600
 
 
 def load_or_create_secret_key(settings: Settings) -> str:
@@ -29,9 +29,7 @@ def load_or_create_secret_key(settings: Settings) -> str:
         return path.read_text(encoding="utf-8").strip()
     path.parent.mkdir(parents=True, exist_ok=True)
     key = secrets.token_hex(SECRET_KEY_BYTES)
-    descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, PRIVATE_FILE_MODE)
-    with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
-        handle.write(key)
+    write_private_text(path, key)
     return key
 
 
@@ -87,8 +85,26 @@ def ensure_same_origin_request() -> None:
         raise _cross_site_error()
 
 
+def _secret_key_bytes() -> bytes:
+    secret = current_app.secret_key
+    if secret is None:
+        raise RuntimeError("Flask secret_key must be configured before signing in.")
+    return secret if isinstance(secret, bytes) else secret.encode()
+
+
+def _password_fingerprint(settings: Settings) -> str:
+    return hmac.new(
+        _secret_key_bytes(), settings.password.encode(), hashlib.sha256
+    ).hexdigest()
+
+
 def is_authenticated(settings: Settings) -> bool:
-    return not settings.password or session.get(AUTHENTICATED_SESSION_KEY) is True
+    if not settings.password:
+        return True
+    fingerprint = session.get(AUTHENTICATED_SESSION_KEY)
+    return isinstance(fingerprint, str) and hmac.compare_digest(
+        fingerprint, _password_fingerprint(settings)
+    )
 
 
 def ensure_authenticated(settings: Settings) -> None:
@@ -102,9 +118,9 @@ def password_matches(settings: Settings, candidate: object) -> bool:
     return hmac.compare_digest(candidate.encode(), settings.password.encode())
 
 
-def sign_in() -> None:
+def sign_in(settings: Settings) -> None:
     session.clear()
-    session[AUTHENTICATED_SESSION_KEY] = True
+    session[AUTHENTICATED_SESSION_KEY] = _password_fingerprint(settings)
     session.permanent = True
 
 

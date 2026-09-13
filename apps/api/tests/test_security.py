@@ -1,3 +1,4 @@
+import stat
 from dataclasses import replace
 
 import pytest
@@ -90,8 +91,19 @@ def test_password_session(settings: Settings) -> None:
         assert password_matches(protected, "wrong") is False
         assert password_matches(protected, 42) is False
         assert password_matches(protected, "correct horse") is True
-        sign_in()
+        sign_in(protected)
         assert is_authenticated(protected) is True
+
+
+def test_sign_in_is_revoked_when_password_changes(settings: Settings) -> None:
+    protected = replace(settings, password="correct horse")
+    app = Flask(__name__)
+    app.secret_key = "test"
+    with app.test_request_context("/api/jobs"):
+        sign_in(protected)
+        assert is_authenticated(protected) is True
+        changed = replace(protected, password="different password")
+        assert is_authenticated(changed) is False
 
 
 def test_secret_key_is_generated_once(settings: Settings) -> None:
@@ -100,3 +112,4 @@ def test_secret_key_is_generated_once(settings: Settings) -> None:
     assert len(first) == 64
     assert load_or_create_secret_key(generated) == first
     assert load_or_create_secret_key(settings) == "test-secret-key"
+    assert stat.S_IMODE(generated.secret_key_file.stat().st_mode) == 0o600

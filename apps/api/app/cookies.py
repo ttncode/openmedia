@@ -1,18 +1,19 @@
-import os
-import shutil
+import re
 import threading
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
 from .errors import ApiError
+from .private_files import write_private_text
 
 COOKIE_COPY_NAME = ".cookies.txt"
 MAX_COOKIE_BYTES = 1024 * 1024
 HTTP_ONLY_PREFIX = "#HttpOnly_"
 COOKIE_FIELD_COUNT = 7
 EXPIRY_FIELD = 4
-PRIVATE_FILE_MODE = 0o600
+EXPIRY_PATTERN = re.compile(r"[0-9]+")
+MAX_REPRESENTABLE_EXPIRY = int(datetime.max.replace(tzinfo=UTC).timestamp())
 
 
 @dataclass(frozen=True)
@@ -53,7 +54,9 @@ def parse_cookie_rows(text: str) -> list[CookieRow]:
         if not line.strip() or line.startswith("#"):
             continue
         fields = line.split("\t")
-        if len(fields) == COOKIE_FIELD_COUNT and fields[EXPIRY_FIELD].isdigit():
+        if len(fields) == COOKIE_FIELD_COUNT and EXPIRY_PATTERN.fullmatch(
+            fields[EXPIRY_FIELD]
+        ):
             rows.append(
                 CookieRow(
                     domain=fields[0].lstrip("."), expires=int(fields[EXPIRY_FIELD])
@@ -82,7 +85,9 @@ def validate_cookie_file(raw: bytes) -> str:
 
 def summarize_cookies(text: str, uploaded_at: datetime) -> CookieSummary:
     rows = parse_cookie_rows(text)
-    expiries = [row.expires for row in rows if row.expires > 0]
+    expiries = [
+        row.expires for row in rows if 0 < row.expires <= MAX_REPRESENTABLE_EXPIRY
+    ]
     expires_at = datetime.fromtimestamp(max(expiries), UTC) if expiries else None
     return CookieSummary(
         True, tuple(sorted({row.domain for row in rows})), expires_at, uploaded_at
@@ -107,11 +112,7 @@ class CookieStore:
         with self._lock:
             self._path.parent.mkdir(parents=True, exist_ok=True)
             temporary = self._path.with_suffix(".tmp")
-            descriptor = os.open(
-                temporary, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, PRIVATE_FILE_MODE
-            )
-            with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
-                handle.write(text)
+            write_private_text(temporary, text)
             temporary.replace(self._path)
         return self.summary()
 
@@ -123,7 +124,7 @@ class CookieStore:
         with self._lock:
             if not self._path.is_file():
                 return None
+            text = self._path.read_text(encoding="utf-8")
             target = directory / COOKIE_COPY_NAME
-            shutil.copyfile(self._path, target)
-            target.chmod(PRIVATE_FILE_MODE)
+            write_private_text(target, text)
             return target

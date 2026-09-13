@@ -3,7 +3,12 @@ from pathlib import Path
 
 import pytest
 
-from app.cookies import CookieStore, parse_cookie_rows, validate_cookie_file
+from app.cookies import (
+    COOKIE_COPY_NAME,
+    CookieStore,
+    parse_cookie_rows,
+    validate_cookie_file,
+)
 from app.errors import ApiError
 
 COOKIES = (
@@ -30,6 +35,20 @@ def test_invalid_files_are_rejected(raw: bytes) -> None:
     assert caught.value.code == "invalid_cookies"
 
 
+def test_non_ascii_expiry_field_is_not_a_valid_row() -> None:
+    text = ".example.com\tTRUE\t/\tTRUE\t²\tSID\tabc\n"
+    assert parse_cookie_rows(text) == []
+
+
+def test_far_future_expiry_does_not_crash_save_or_summarize(tmp_path: Path) -> None:
+    text = ".example.com\tTRUE\t/\tTRUE\t1000000000000\tSID\tabc\n"
+    store = CookieStore(tmp_path / "cookies.txt")
+    summary = store.save(text.encode())
+    assert summary.present is True
+    assert summary.domains == ("example.com",)
+    assert summary.expires_at is None
+
+
 def test_store_saves_privately_and_summarizes(tmp_path: Path) -> None:
     store = CookieStore(tmp_path / "cookies.txt")
     assert store.summary().present is False
@@ -50,5 +69,19 @@ def test_copy_into_and_delete(tmp_path: Path) -> None:
     copied = store.copy_into(job_dir)
     assert copied == job_dir / ".cookies.txt"
     assert copied.read_text() == COOKIES
+    assert stat.S_IMODE(copied.stat().st_mode) == 0o600
     store.delete()
     assert store.summary().present is False
+
+
+def test_copy_into_refuses_to_follow_a_symlink(tmp_path: Path) -> None:
+    store = CookieStore(tmp_path / "cookies.txt")
+    store.save(COOKIES.encode())
+    job_dir = tmp_path / "job"
+    job_dir.mkdir()
+    outside = tmp_path / "outside.txt"
+    outside.write_text("do not touch")
+    (job_dir / COOKIE_COPY_NAME).symlink_to(outside)
+    with pytest.raises(OSError):
+        store.copy_into(job_dir)
+    assert outside.read_text() == "do not touch"
