@@ -1,0 +1,8 @@
+# pnpm blocks an unreviewed postinstall build rather than warning, which would
+# abort ci-unit non-interactively — so each has to be decided here. esbuild is
+# allowed because its postinstall fetches the binary vite actually runs; the
+# other two have pure-js fallbacks and are denied. See ADR-0017 in the toolbox.
+allowBuilds:
+  unrs-resolver: false
+  esbuild: true
+  '@parcel/watcher': false

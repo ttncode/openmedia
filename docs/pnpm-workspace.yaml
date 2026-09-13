@@ -1,0 +1,5 @@
+# docs ships whatever adapters a project picks, so it needs its own policy for
+# a project with no root workspace. Deleted by enable_typescript_workspace once
+# one exists. esbuild has no pure-js fallback, so it is allowed.
+allowBuilds:
+  esbuild: true

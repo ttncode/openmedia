@@ -1,0 +1,27 @@
+# Through `mise exec --` so only mise has to be on PATH. These tools exist
+# only in this project's mise.toml, so calling them bare fails a plain
+# `git commit` with `gitleaks: not found`. lefthook's `rc:` key would do this
+# too, but it is baked into .git/hooks at install time and drifts silently.
+# nextjs needs no extra hook; prettier in the common layer already covers it.
+pre-commit:
+  parallel: true
+  commands:
+    prettier:
+      glob: '*.{ts,tsx,js,mjs,cjs,json,md,yml,yaml,css}'
+      run: mise exec -- pnpm exec prettier --write {staged_files}
+      stage_fixed: true
+    gitleaks:
+      run: mise exec -- gitleaks protect --staged --redact --no-banner
+    ruff-apps-api:
+      glob: '*.py'
+      root: apps/api/
+      run: uv run ruff format {staged_files}
+      stage_fixed: true
+commit-msg:
+  commands:
+    commitlint:
+      run: mise exec -- pnpm exec commitlint --edit {1}
+pre-push:
+  commands:
+    checklist:
+      run: mise run checklist

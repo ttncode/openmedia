@@ -1,0 +1,13 @@
+# Written by scaffold. `scaffold update` reads this to work out what changed
+# in the toolbox since this project was generated.
+#
+# version is `git describe` from the toolbox checkout. A `-dirty` suffix means
+# it was generated from uncommitted edits, so there is no commit to diff
+# against and `scaffold update` will say so.
+version = "v0.1.0-12-g8ad2131"
+
+# Which adapter produced each application, so an update knows whose files to
+# bring across. Added by `scaffold new` and `scaffold add`.
+[apps]
+"apps/web" = "nextjs"
+"apps/api" = "flask"

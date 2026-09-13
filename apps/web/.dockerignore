@@ -1,0 +1,10 @@
+# copied from a pinned build stage; a host copy would overwrite it
+node_modules
+.next
+dist
+coverage
+
+.env
+.env.*
+!.env.example
+.git

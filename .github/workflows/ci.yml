@@ -1,0 +1,21 @@
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+permissions: {}
+jobs:
+  ci:
+    # no more than app-ci's own jobs ask for; the workflow-level
+    # `permissions: {}` above grants nothing to inherit.
+    permissions:
+      contents: read
+      pull-requests: read
+    # `@v1` moves on purpose: one fix reaches every project, and that same
+    # channel outlives the engagement (ADR-0005).
+    uses: ttncode/.github/.github/workflows/app-ci.yml@v1 # zizmor: ignore[unpinned-uses,ref-confusion]
+    with:
+      roots: '["apps/api","apps/web","docs"]'

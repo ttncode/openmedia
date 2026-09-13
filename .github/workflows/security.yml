@@ -1,0 +1,20 @@
+name: Security
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '17 3 * * 1'
+permissions: {}
+jobs:
+  security:
+    # no more than app-security's own jobs ask for; the workflow-level
+    # `permissions: {}` above grants nothing to inherit.
+    permissions:
+      contents: read
+      security-events: write
+      pull-requests: read
+      actions: read
+    # `@v1` moves on purpose: one fix reaches every project, and that same
+    # channel outlives the engagement (ADR-0005).
+    uses: ttncode/.github/.github/workflows/app-security.yml@v1 # zizmor: ignore[unpinned-uses,ref-confusion]

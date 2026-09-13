@@ -1,0 +1,6 @@
+# Local development only: throwaway services an app started outside docker can
+# point at on localhost. Never shipped as a release asset — compose.yaml is the
+# stack a client runs. scaffold merges the selected services in.
+name: app-dev
+
+services: {}

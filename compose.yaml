@@ -1,0 +1,26 @@
+# The production-like stack clients run. Attached to every release so the
+# compose file and the image always match (ADR-0014). Every variable below has
+# a default so this file validates in a freshly generated project, before a
+# .env exists — the real values live in .env, written by install.sh.
+#
+# Empty on purpose: scaffold merges in one service per application (ADR-0022)
+# and whichever database and cache were selected (ADR-0019), so a project ships
+# exactly what it asked for rather than a service nothing connects to.
+name: app
+services:
+  web:
+    image: ghcr.io/ttncode/openmedia-web:${IMAGE_TAG:-latest}
+    env_file:
+      - path: .env
+        required: false
+    restart: always
+    ports:
+      - '${WEB_PORT:-8080}:8080'
+  api:
+    image: ghcr.io/ttncode/openmedia-api:${IMAGE_TAG:-latest}
+    env_file:
+      - path: .env
+        required: false
+    restart: always
+    ports:
+      - '${API_PORT:-8081}:8080'

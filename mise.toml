@@ -1,0 +1,47 @@
+monorepo_root = true
+
+# The services this project was generated against. `scaffold add` reads these
+# so an application added later is wired to the same database as the first
+# one. Changing them here does not migrate anything — see the toolbox's
+# ADR-0019.
+[vars]
+database = "none"
+cache = "none"
+
+# The registry path every application in this project publishes under, with
+# its own directory name appended: apps/web becomes <image>-web (ADR-0022).
+# Read by `scaffold add`, so an application added in month six lands under the
+# same path as the first one, and by compose.yaml and the build workflows,
+# which have to name one string or a release publishes an image nothing pulls.
+image = "ghcr.io/ttncode/openmedia"
+
+[monorepo]
+config_roots = [
+  "apps/api",
+  "apps/web",
+  "docs",
+]
+
+[tools]
+node = "24.15.0"
+pnpm = "11.21.0"
+lefthook = "2.1.11"
+gitleaks = "8.30.0"
+
+[settings]
+pin = true
+lockfile = true
+
+[tasks.dev]
+interactive = true
+run = "docker compose -f compose.dev.yaml up --remove-orphans"
+
+[tasks.secrets]
+description = "scan the whole history for secrets"
+run = "gitleaks git --redact --no-banner"
+
+[tasks."dev-down"]
+run = "docker compose -f compose.dev.yaml down --remove-orphans"
+
+[tasks.checklist]
+run = [{ task = "//docs:checklist" }, { task = "//apps/web:checklist" }, { task = "//apps/api:checklist" }]

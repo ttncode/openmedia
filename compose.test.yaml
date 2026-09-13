@@ -1,0 +1,6 @@
+# ci and local test runs: same services as compose.dev.yaml, but tmpfs storage
+# so every run starts from an empty database and nothing persists between
+# runs.
+name: app-test
+
+services: {}
