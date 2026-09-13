@@ -43,3 +43,7 @@ run = [
 
 [tasks.checklist]
 run = [{ task = ":ci-unit" }, { task = ":build" }]
+
+[tasks.dev]
+env = { API_URL = "http://localhost:8081" }
+run = "pnpm exec next dev --port 3000"
