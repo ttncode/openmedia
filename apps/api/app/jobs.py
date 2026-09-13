@@ -1,3 +1,4 @@
+import logging
 import os
 import secrets
 import shutil
@@ -34,6 +35,9 @@ PARTIAL_SUFFIXES = frozenset({".part", ".ytdl", ".temp"})
 WATCHDOG_INTERVAL_SECONDS = 1.0
 TERMINATED_EXIT_CODE = -15
 IDLE_POLL_INTERVAL_SECONDS = 0.005
+PROCESSING_STALL_MULTIPLIER = 10
+
+logger = logging.getLogger(__name__)
 
 
 class JobStatus(StrEnum):
@@ -67,7 +71,8 @@ class SubprocessHandle:
             list(command),
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            text=True,
+            encoding="utf-8",
+            errors="replace",
             bufsize=1,
             env=dict(env),
             start_new_session=True,
@@ -192,9 +197,10 @@ def collect_files(job_dir: Path, title: str, job_id: str) -> list[JobFile]:
 
 
 class StallWatchdog:
-    def __init__(self, handle: ProcessHandle, timeout_seconds: float) -> None:
+    def __init__(self, handle: ProcessHandle, timeout_seconds: float, job: Job) -> None:
         self._handle = handle
         self._timeout = timeout_seconds
+        self._job = job
         self._last_activity = time.monotonic()
         self._stopped = threading.Event()
         self.fired = False
@@ -209,10 +215,15 @@ class StallWatchdog:
     def stop(self) -> None:
         self._stopped.set()
 
+    def _current_timeout(self) -> float:
+        if self._job.status is JobStatus.PROCESSING:
+            return self._timeout * PROCESSING_STALL_MULTIPLIER
+        return self._timeout
+
     def _watch(self) -> None:
         interval = min(WATCHDOG_INTERVAL_SECONDS, self._timeout / 4)
         while not self._stopped.wait(interval):
-            if time.monotonic() - self._last_activity > self._timeout:
+            if time.monotonic() - self._last_activity > self._current_timeout():
                 self.fired = True
                 self._handle.terminate()
                 return
@@ -373,14 +384,18 @@ class JobManager:
 
     def _run(self, job: Job) -> None:
         job_dir = self._job_dir(job)
-        job_dir.mkdir(parents=True, exist_ok=True)
         try:
-            outcome = self._execute(job, job_dir)
-        except OSError as error:
-            outcome = Outcome(
-                returncode=1, output=f"ERROR: {error}", stalled=False, cookies_file=None
-            )
-        try:
+            try:
+                job_dir.mkdir(parents=True, exist_ok=True)
+                outcome = self._execute(job, job_dir)
+            except Exception as error:
+                logger.exception("Job %s failed unexpectedly", job.job_id)
+                outcome = Outcome(
+                    returncode=1,
+                    output=f"ERROR: {error}",
+                    stalled=False,
+                    cookies_file=None,
+                )
             self._finish(job, job_dir, outcome)
             self.dispatch()
         finally:
@@ -390,6 +405,15 @@ class JobManager:
     def _execute(self, job: Job, job_dir: Path) -> Outcome:
         settings = self._runtime.settings
         cookies_file = self._runtime.copy_cookies(job_dir)
+        with self._lock:
+            cancelled_before_start = job.job_id in self._cancelled
+        if cancelled_before_start:
+            return Outcome(
+                returncode=TERMINATED_EXIT_CODE,
+                output="",
+                stalled=False,
+                cookies_file=cookies_file,
+            )
         request = DownloadRequest(
             job.url,
             job.options,
@@ -402,17 +426,22 @@ class JobManager:
             build_download_command(request), ytdlp_environment(settings)
         )
         with self._lock:
-            self._handles[job.job_id] = handle
-        watchdog = StallWatchdog(handle, settings.stall_timeout_seconds)
+            if job.job_id in self._cancelled:
+                handle.terminate()
+            else:
+                self._handles[job.job_id] = handle
+        watchdog = StallWatchdog(handle, settings.stall_timeout_seconds, job)
         watchdog.start()
-        tail: deque[str] = deque(maxlen=OUTPUT_TAIL_LINES)
-        tracker = ProgressTracker()
-        for line in handle.output_lines():
-            watchdog.touch()
-            tail.append(line.rstrip())
-            self._apply_line(job, tracker, line)
-        returncode = handle.wait()
-        watchdog.stop()
+        try:
+            tail: deque[str] = deque(maxlen=OUTPUT_TAIL_LINES)
+            tracker = ProgressTracker()
+            for line in handle.output_lines():
+                watchdog.touch()
+                tail.append(line.rstrip())
+                self._apply_line(job, tracker, line)
+            returncode = handle.wait()
+        finally:
+            watchdog.stop()
         return Outcome(returncode, "\n".join(tail), watchdog.fired, cookies_file)
 
     def _apply_line(self, job: Job, tracker: ProgressTracker, line: str) -> None:
@@ -440,7 +469,13 @@ class JobManager:
             self._running.discard(job.job_id)
             cancelled = job.job_id in self._cancelled
             if not cancelled:
-                self._record_outcome(job, job_dir, outcome)
+                try:
+                    self._record_outcome(job, job_dir, outcome)
+                except Exception as error:
+                    logger.exception(
+                        "Job %s failed while recording its outcome", job.job_id
+                    )
+                    self._fail(job, "extractor_error", f"Unexpected error: {error}")
         if cancelled:
             self._remove_directory(job)
 

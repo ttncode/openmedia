@@ -1,6 +1,6 @@
 import threading
 import time
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -9,11 +9,20 @@ import pytest
 
 from app.config import Settings
 from app.errors import ApiError
-from app.jobs import JobManager, JobRuntime, JobStatus
+from app.jobs import Job, JobManager, JobRuntime, JobStatus, StallWatchdog, utc_now
 from app.settings_store import RuntimeSettings, SettingsStore
 from app.validation import parse_download_options
 
 URL = "https://www.youtube.com/watch?v=abc"
+
+
+def wait_until(predicate: Callable[[], bool], timeout: float = 5.0) -> bool:
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if predicate():
+            return True
+        time.sleep(0.005)
+    return predicate()
 
 
 class ScriptedProcess:
@@ -121,14 +130,27 @@ def test_missing_output_file_is_an_error(settings: Settings) -> None:
     assert job.error_code == "extractor_error"
 
 
+def test_unexpected_error_releases_the_slot_and_marks_the_job_failed(
+    settings: Settings,
+) -> None:
+    settings.downloads_dir.write_text("not a directory")
+    manager = make_manager(settings, ProcessScript([], {}), concurrency=1)
+    job = manager.submit(URL, "x", parse_download_options({}))
+    assert manager.wait_until_idle(5)
+    assert job.status is JobStatus.ERROR
+    assert job.error_code == "extractor_error"
+
+
 def test_concurrency_limit_queues_and_releases(settings: Settings) -> None:
     script = ProcessScript([], {"media.mp4": 1}, hold=True)
     manager = make_manager(settings, script, concurrency=1)
     first = manager.submit(URL, "first", parse_download_options({}))
     second = manager.submit(URL, "second", parse_download_options({}))
-    time.sleep(0.05)
-    assert first.status is JobStatus.DOWNLOADING
-    assert second.status is JobStatus.QUEUED
+    assert wait_until(
+        lambda: (
+            first.status is JobStatus.DOWNLOADING and second.status is JobStatus.QUEUED
+        )
+    )
     assert manager.to_json(second)["queue_position"] == 1
     script.release.set()
     assert manager.wait_until_idle(5)
@@ -161,7 +183,7 @@ def test_cancelling_a_running_job_stops_the_process_and_removes_files(
     script = ProcessScript(["OMPROGRESS 10 100 NA NA NA"], {"media.mp4": 1}, hold=True)
     manager = make_manager(settings, script)
     job = manager.submit(URL, "x", parse_download_options({}))
-    time.sleep(0.05)
+    assert wait_until(lambda: len(script.processes) == 1)
     manager.cancel_or_remove(job.job_id)
     assert manager.wait_until_idle(5)
     assert job.status is JobStatus.CANCELLED
@@ -181,6 +203,33 @@ def test_cancelling_a_queued_job(settings: Settings) -> None:
     assert len(script.processes) == 1
 
 
+def test_cancelling_before_the_process_starts_skips_it(settings: Settings) -> None:
+    script = ProcessScript([], {"media.mp4": 1})
+    cookie_copy_started = threading.Event()
+
+    def slow_cookies(directory: Path) -> Path | None:
+        cookie_copy_started.set()
+        time.sleep(0.1)
+        return None
+
+    store = SettingsStore(settings.settings_file, RuntimeSettings(60, 3))
+    manager = JobManager(
+        JobRuntime(
+            settings=settings,
+            store=store,
+            copy_cookies=slow_cookies,
+            process_factory=script,
+        )
+    )
+    job = manager.submit(URL, "x", parse_download_options({}))
+    assert cookie_copy_started.wait(1)
+    manager.cancel_or_remove(job.job_id)
+    assert manager.wait_until_idle(5)
+    assert job.status is JobStatus.CANCELLED
+    assert script.processes == []
+    assert not (settings.downloads_dir / job.job_id).exists()
+
+
 def test_removing_a_finished_job_deletes_it(settings: Settings) -> None:
     manager = make_manager(settings, ProcessScript([], {"media.mp4": 1}))
     job = manager.submit(URL, "x", parse_download_options({}))
@@ -197,6 +246,38 @@ def test_stalled_download_times_out(settings: Settings) -> None:
     job = manager.submit(URL, "x", parse_download_options({}))
     assert manager.wait_until_idle(5)
     assert (job.status, job.error_code) == (JobStatus.ERROR, "timeout")
+
+
+class SilentHandle:
+    def __init__(self) -> None:
+        self.terminated = threading.Event()
+
+    def output_lines(self) -> Iterator[str]:
+        return iter(())
+
+    def wait(self) -> int:
+        return 0
+
+    def terminate(self) -> None:
+        self.terminated.set()
+
+
+def test_watchdog_gives_processing_jobs_more_time_before_stalling() -> None:
+    job = Job(
+        job_id="watchdog-test",
+        url=URL,
+        title="x",
+        options=parse_download_options({}),
+        created_at=utc_now(),
+    )
+    handle = SilentHandle()
+    watchdog = StallWatchdog(handle, timeout_seconds=0.1, job=job)
+    watchdog.start()
+    job.status = JobStatus.PROCESSING
+    time.sleep(0.25)
+    assert not handle.terminated.is_set()
+    assert wait_until(lambda: handle.terminated.is_set(), timeout=2.0)
+    watchdog.stop()
 
 
 def test_remove_finished_before_cutoff(settings: Settings) -> None:

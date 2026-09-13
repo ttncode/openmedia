@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import pytest
@@ -22,6 +23,23 @@ def test_limit_is_reported_in_bytes(tmp_path: Path) -> None:
 
 def test_missing_directory_counts_as_empty(tmp_path: Path) -> None:
     assert storage_usage(tmp_path / "absent", 0).used_bytes == 0
+
+
+def test_vanished_file_is_skipped(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (tmp_path / "steady.bin").write_bytes(b"x" * 100)
+    vanished = tmp_path / "downloading.part"
+    vanished.write_bytes(b"x" * 50)
+    original_stat = Path.stat
+
+    def flaky_stat(self: Path, *, follow_symlinks: bool = True) -> os.stat_result:
+        if self == vanished:
+            raise FileNotFoundError(self)
+        return original_stat(self, follow_symlinks=follow_symlinks)
+
+    monkeypatch.setattr(Path, "stat", flaky_stat)
+    assert storage_usage(tmp_path, 0).used_bytes == 100
 
 
 def test_full_storage_is_refused() -> None:

@@ -1,4 +1,5 @@
 import shutil
+import stat
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
@@ -17,10 +18,18 @@ class StorageUsage:
         return asdict(self)
 
 
+def _entry_size(entry: Path) -> int:
+    try:
+        info = entry.stat()
+    except FileNotFoundError:
+        return 0
+    return info.st_size if stat.S_ISREG(info.st_mode) else 0
+
+
 def directory_size(path: Path) -> int:
     if not path.is_dir():
         return 0
-    return sum(entry.stat().st_size for entry in path.rglob("*") if entry.is_file())
+    return sum(_entry_size(entry) for entry in path.rglob("*"))
 
 
 def _free_bytes(path: Path) -> int:
