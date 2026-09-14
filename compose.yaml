@@ -10,9 +10,6 @@ name: openmedia
 services:
   web:
     image: ghcr.io/ttncode/openmedia-web:${IMAGE_TAG:-latest}
-    env_file:
-      - path: .env
-        required: false
     environment:
       API_URL: http://api:8080
     restart: always
