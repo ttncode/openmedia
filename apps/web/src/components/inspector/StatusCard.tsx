@@ -6,6 +6,7 @@ import { formatBytes, formatSpeed } from "@/lib/format";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { jobLabel } from "@/state/reducer";
 import { useStore } from "@/state/StoreProvider";
+import type { Messages } from "@/lib/i18n/en";
 import type { FetchErrorItem, JobItem } from "@/state/types";
 import { Icon } from "../controls/Icon";
 import styles from "./inspector.module.css";
@@ -18,11 +19,38 @@ function errorMessage(
   return messages[code] ?? fallback;
 }
 
-export function StatusCard({
-  item,
-}: {
-  item: JobItem | FetchErrorItem;
-}): ReactNode {
+type StatusItem = JobItem | FetchErrorItem;
+
+function statusTitle(item: StatusItem, t: Messages): string {
+  if (item.type === "fetch-error") return t.inspector.errorTitle;
+  const { job } = item;
+  switch (job.status) {
+    case "downloading":
+      return t.inspector.downloadingTitle(jobLabel(job));
+    case "queued":
+      return t.inspector.queuedTitle(job.queue_position);
+    case "processing":
+      return t.inspector.processingTitle;
+    case "done":
+      return t.inspector.doneTitle;
+    default:
+      return t.inspector.errorTitle;
+  }
+}
+
+export function StatusCard({ item }: { item: StatusItem }): ReactNode {
+  const { t } = useI18n();
+  return (
+    <>
+      <span className="visually-hidden" aria-live="polite">
+        {statusTitle(item, t)}
+      </span>
+      <StatusDetails item={item} />
+    </>
+  );
+}
+
+function StatusDetails({ item }: { item: StatusItem }): ReactNode {
   const { t, locale } = useI18n();
   const { state } = useStore();
   const errors: Record<string, string> = t.errors;
@@ -33,7 +61,7 @@ export function StatusCard({
           <Icon name="warningCircle" size={40} />
         </span>
         <div>
-          <strong>{t.inspector.errorTitle}</strong>
+          <strong>{statusTitle(item, t)}</strong>
           <p>{errorMessage(item.code, errors, t.errors.unknown_error)}</p>
         </div>
       </div>
@@ -49,7 +77,7 @@ export function StatusCard({
       .filter(Boolean)
       .join(", ");
     return (
-      <div className={styles.statusCard} aria-live="polite">
+      <div className={styles.statusCard}>
         <span className={styles.bigRing} style={style}>
           <svg viewBox="0 0 36 36">
             <circle
@@ -72,7 +100,7 @@ export function StatusCard({
           </span>
         </span>
         <div>
-          <strong>{t.inspector.downloadingTitle(jobLabel(job))}</strong>
+          <strong>{statusTitle(item, t)}</strong>
           <p>{detail}</p>
         </div>
       </div>
@@ -83,32 +111,27 @@ export function StatusCard({
     {
       icon: "timer" | "arrowClockwise" | "checkCircle" | "warningCircle";
       tone: string;
-      title: string;
       body: string;
     }
   > = {
     queued: {
       icon: "timer",
       tone: "",
-      title: t.inspector.queuedTitle(job.queue_position),
       body: t.inspector.queuedHelp,
     },
     processing: {
       icon: "arrowClockwise",
       tone: "",
-      title: t.inspector.processingTitle,
       body: t.inspector.processingHelp,
     },
     done: {
       icon: "checkCircle",
       tone: styles.done,
-      title: t.inspector.doneTitle,
       body: `${jobLabel(job)}, ${formatBytes(job.files[0]?.size_bytes ?? 0, locale)}`,
     },
     error: {
       icon: "warningCircle",
       tone: styles.error,
-      title: t.inspector.errorTitle,
       body: errorMessage(
         job.error_code ?? "unknown_error",
         errors,
@@ -127,7 +150,7 @@ export function StatusCard({
         />
       </span>
       <div>
-        <strong>{card.title}</strong>
+        <strong>{statusTitle(item, t)}</strong>
         <p>{card.body}</p>
         {job.status === "error" && state.cookies?.present ? (
           <p>{t.inspector.cookiesReady}</p>
