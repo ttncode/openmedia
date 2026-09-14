@@ -22,7 +22,6 @@ ENV NODE_ENV=production
 # next standalone output carries only the server files it actually needs
 COPY --from=build /app/.next/standalone ./
 COPY --from=build /app/.next/static ./.next/static
-COPY --from=build /app/public ./public
 USER node
 # 8080 because that is the container port common/compose.yaml publishes, and
 # nothing rewrites it — an adapter listening anywhere else publishes a dead
