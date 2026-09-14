@@ -234,6 +234,7 @@ export const vi: Messages = {
       'File này không phải là file cookies.txt theo định dạng Netscape.',
     nested_playlist:
       'Mục này cũng là một playlist. Hãy dán riêng liên kết của nó để thêm các mục bên trong.',
+    empty_playlist: 'Playlist này không có mục nào để tải.',
     api_unreachable: 'Không kết nối được với máy chủ OpenMedia.',
     unknown_error: 'Đã có lỗi xảy ra. Hãy thử lại.',
   },

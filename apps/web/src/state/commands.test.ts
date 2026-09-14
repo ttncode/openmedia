@@ -125,6 +125,29 @@ describe('commands', () => {
     ).toEqual(['nested_playlist', 'ready']);
   });
 
+  it('keeps an error row for a playlist that lists only itself', async () => {
+    const album = 'https://archive.org/details/empty';
+    const info = vi
+      .spyOn(api, 'info')
+      .mockResolvedValue({ ...INFO, is_playlist: true });
+    vi.spyOn(api, 'playlist').mockResolvedValue({
+      title: 'Empty',
+      count: 1,
+      urls: [album],
+    });
+    const { commands, state } = harness();
+    await commands.fetchLinks([album], 'single');
+    expect(info).toHaveBeenCalledTimes(1);
+    expect(state().items).toEqual([
+      {
+        type: 'fetch-error',
+        id: expect.any(String),
+        url: album,
+        code: 'empty_playlist',
+      },
+    ]);
+  });
+
   it('starts a download and cancels it back to ready', async () => {
     vi.spyOn(api, 'info').mockResolvedValue(INFO);
     const job = {

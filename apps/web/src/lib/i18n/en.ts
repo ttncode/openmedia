@@ -240,6 +240,7 @@ export const en = {
     invalid_cookies: 'That file is not a cookies.txt file in Netscape format.',
     nested_playlist:
       'This entry is itself a playlist. Paste its link on its own to add its items.',
+    empty_playlist: 'This playlist has no items to download.',
     api_unreachable: 'The OpenMedia server is not reachable.',
     unknown_error: 'Something went wrong. Try again.',
   },

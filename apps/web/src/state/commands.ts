@@ -84,9 +84,15 @@ export function createCommands(
     (await Promise.all(urls.map(fetchEntry))).flat();
 
   const replaceWithEntries: PlaylistHandler = async (id, url) => {
-    const { urls } = await api.playlist(url);
+    const entries = (await api.playlist(url)).urls.filter(
+      (entry) => entry !== url,
+    );
+    if (entries.length === 0) {
+      dispatch({ type: 'fetch/failed', id, code: 'empty_playlist' });
+      return [id];
+    }
     dispatch({ type: 'item/removed', id });
-    return fetchEntries(urls.filter((entry) => entry !== url));
+    return fetchEntries(entries);
   };
 
   const fetchOne = (url: string): Promise<string[]> =>
