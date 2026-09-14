@@ -7,3 +7,7 @@
   background: var(--fill);
   color: var(--secondary);
 }
+
+.entry {
+  cursor: default;
+}

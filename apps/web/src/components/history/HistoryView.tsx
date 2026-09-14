@@ -39,7 +39,7 @@ export function HistoryView({
       ) : (
         <ul className={queueStyles.list}>
           {state.history.map((entry) => (
-            <li key={entry.id} className={queueStyles.row}>
+            <li key={entry.id} className={`${queueStyles.row} ${styles.entry}`}>
               <span className={styles.glyph}>
                 <Icon
                   name={entry.kind === "audio" ? "musicNotes" : "filmStrip"}
