@@ -232,6 +232,8 @@ export const vi: Messages = {
     extractor_error: 'Không đọc được trang này. Hãy thử lại sau.',
     invalid_cookies:
       'File này không phải là file cookies.txt theo định dạng Netscape.',
+    nested_playlist:
+      'Mục này cũng là một playlist. Hãy dán riêng liên kết của nó để thêm các mục bên trong.',
     api_unreachable: 'Không kết nối được với máy chủ OpenMedia.',
     unknown_error: 'Đã có lỗi xảy ra. Hãy thử lại.',
   },

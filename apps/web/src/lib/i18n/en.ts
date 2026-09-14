@@ -238,6 +238,8 @@ export const en = {
     timeout: 'The site took too long to respond. Try again.',
     extractor_error: 'The site could not be read. Try again later.',
     invalid_cookies: 'That file is not a cookies.txt file in Netscape format.',
+    nested_playlist:
+      'This entry is itself a playlist. Paste its link on its own to add its items.',
     api_unreachable: 'The OpenMedia server is not reachable.',
     unknown_error: 'Something went wrong. Try again.',
   },

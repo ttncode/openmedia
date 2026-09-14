@@ -102,6 +102,29 @@ describe('commands', () => {
     });
   });
 
+  it('expands only one level and marks nested playlists as errors', async () => {
+    const album = 'https://archive.org/details/fables';
+    const nested = 'https://archive.org/details/fables/more';
+    vi.spyOn(api, 'info').mockImplementation(async (url) =>
+      url === album || url === nested ? { ...INFO, is_playlist: true } : INFO,
+    );
+    const playlist = vi.spyOn(api, 'playlist').mockResolvedValue({
+      title: 'Fables',
+      count: 2,
+      urls: [nested, 'https://archive.org/download/fables/1.mp3'],
+    });
+    const { commands, state } = harness();
+    await commands.fetchLinks([album], 'single');
+    expect(playlist).toHaveBeenCalledTimes(1);
+    expect(
+      state()
+        .items.map((item) =>
+          item.type === 'fetch-error' ? item.code : item.type,
+        )
+        .sort(),
+    ).toEqual(['nested_playlist', 'ready']);
+  });
+
   it('starts a download and cancels it back to ready', async () => {
     vi.spyOn(api, 'info').mockResolvedValue(INFO);
     const job = {

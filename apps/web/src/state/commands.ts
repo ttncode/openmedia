@@ -6,6 +6,7 @@ import type { Action, AppState, Notice, PlaylistScope } from './types';
 
 type Dispatch = (action: Action) => void;
 type NoticeInput = Omit<Notice, 'id'>;
+type PlaylistHandler = (id: string, url: string) => Promise<string[]>;
 
 export interface Commands {
   notify(notice: NoticeInput): void;
@@ -55,12 +56,15 @@ export function createCommands(
     }
   };
 
-  const fetchOne = async (url: string): Promise<string[]> => {
+  const fetchLink = async (
+    url: string,
+    onPlaylist: PlaylistHandler,
+  ): Promise<string[]> => {
     const id = nextItemId();
     dispatch({ type: 'fetch/started', id, url });
     try {
       const info = await api.info(url);
-      if (info.is_playlist) return await replaceWithEntries(id, url);
+      if (info.is_playlist) return await onPlaylist(id, url);
       dispatch({ type: 'fetch/succeeded', id, url, info });
     } catch (error) {
       dispatch({ type: 'fetch/failed', id, code: errorCode(error) });
@@ -68,34 +72,38 @@ export function createCommands(
     return [id];
   };
 
-  const replaceWithEntries = async (
-    id: string,
-    url: string,
-  ): Promise<string[]> => {
+  const rejectNestedPlaylist: PlaylistHandler = async (id) => {
+    dispatch({ type: 'fetch/failed', id, code: 'nested_playlist' });
+    return [id];
+  };
+
+  const fetchEntry = (url: string): Promise<string[]> =>
+    fetchLink(url, rejectNestedPlaylist);
+
+  const fetchEntries = async (urls: readonly string[]): Promise<string[]> =>
+    (await Promise.all(urls.map(fetchEntry))).flat();
+
+  const replaceWithEntries: PlaylistHandler = async (id, url) => {
     const { urls } = await api.playlist(url);
     dispatch({ type: 'item/removed', id });
-    const entries = urls.filter((entry) => entry !== url);
-    return (await Promise.all(entries.map(fetchOne))).flat();
+    return fetchEntries(urls.filter((entry) => entry !== url));
   };
+
+  const fetchOne = (url: string): Promise<string[]> =>
+    fetchLink(url, replaceWithEntries);
+
+  const fetchScoped = async (
+    url: string,
+    scope: PlaylistScope,
+  ): Promise<string[]> =>
+    scope === 'playlist' && hasPlaylist(url)
+      ? fetchEntries((await api.playlist(url)).urls)
+      : fetchOne(url);
 
   const countReady = (ids: readonly string[]): number =>
     getState().items.filter(
       (item) => item.type === 'ready' && ids.includes(item.id),
     ).length;
-
-  const expand = async (
-    urls: readonly string[],
-    scope: PlaylistScope,
-  ): Promise<string[]> => {
-    const expanded = await Promise.all(
-      urls.map(async (url) =>
-        scope === 'playlist' && hasPlaylist(url)
-          ? [...(await api.playlist(url)).urls]
-          : [url],
-      ),
-    );
-    return expanded.flat();
-  };
 
   const syncJobs = async (): Promise<void> => {
     const requestedAt = Date.now();
@@ -119,8 +127,9 @@ export function createCommands(
     syncJobs: () => guarded(syncJobs),
     fetchLinks: (urls, scope) =>
       guarded(async () => {
-        const targets = await expand(urls, scope);
-        const ids = (await Promise.all(targets.map(fetchOne))).flat();
+        const ids = (
+          await Promise.all(urls.map((url) => fetchScoped(url, scope)))
+        ).flat();
         if (countReady(ids) > 0)
           notify({
             tone: 'success',
