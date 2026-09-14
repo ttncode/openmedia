@@ -29,7 +29,7 @@ def _configure(app: Flask, settings: Settings) -> None:
     app.session_interface = ForwardedProtoSessionInterface()
     hops = settings.trusted_proxy_hops
     object.__setattr__(
-        app, "wsgi_app", ProxyFix(app.wsgi_app, x_for=hops, x_proto=hops, x_host=hops)
+        app, "wsgi_app", ProxyFix(app.wsgi_app, x_for=hops, x_proto=1, x_host=1)
     )
 
 

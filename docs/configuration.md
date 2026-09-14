@@ -36,7 +36,7 @@ matters when running `apps/web` from source against a separately running API.
 | `OPENMEDIA_RATE_LIMIT_PER_MINUTE` | `120`     | Per client, for info, playlist and download requests                    |
 | `OPENMEDIA_STALL_TIMEOUT_SECONDS` | `180`     | A download with no output for this long is stopped                      |
 | `OPENMEDIA_ALLOW_PRIVATE_URLS`    | `false`   | Allows URLs that resolve to private networks                            |
-| `OPENMEDIA_TRUSTED_PROXY_HOPS`    | `1`       | Number of `X-Forwarded-*` hops trusted (the web proxy)                  |
+| `OPENMEDIA_TRUSTED_PROXY_HOPS`    | `1`       | Trusted `X-Forwarded-For` entries, at least 1; see Deployment           |
 | `OPENMEDIA_AUTO_UPDATE_YTDLP`     | `true`    | Container start installs the newest yt-dlp into the data dir            |
 | `OPENMEDIA_YTDLP_PROXY`           | empty     | Optional proxy passed to yt-dlp                                         |
 

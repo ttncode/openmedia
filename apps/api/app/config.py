@@ -81,6 +81,6 @@ def load_settings() -> Settings:
             "OPENMEDIA_STALL_TIMEOUT_SECONDS", 180, 10, 3600
         ),
         allow_private_urls=_flag("OPENMEDIA_ALLOW_PRIVATE_URLS", False),
-        trusted_proxy_hops=_integer("OPENMEDIA_TRUSTED_PROXY_HOPS", 1, 0, 5),
+        trusted_proxy_hops=_integer("OPENMEDIA_TRUSTED_PROXY_HOPS", 1, 1, 5),
         ytdlp_proxy=_text("OPENMEDIA_YTDLP_PROXY", ""),
     )

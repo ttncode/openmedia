@@ -252,3 +252,22 @@ def test_sign_in_attempts_are_limited_across_rotating_client_addresses(
     ]
     assert set(statuses[:-1]) == {401}
     assert statuses[-1] == 429
+
+
+def test_writes_through_the_web_proxy_succeed_with_extra_trusted_hops(
+    open_settings: Settings,
+) -> None:
+    app, _ = build(replace(open_settings, trusted_proxy_hops=2))
+    response = app.test_client().put(
+        "/api/settings",
+        json={"max_concurrent": 2},
+        base_url="http://api:8080",
+        headers={
+            "Origin": "https://openmedia.example.com",
+            "Sec-Fetch-Site": "same-origin",
+            "X-Forwarded-Host": "openmedia.example.com",
+            "X-Forwarded-Proto": "https",
+            "X-Forwarded-For": "198.51.100.7, 203.0.113.9",
+        },
+    )
+    assert response.status_code == 200

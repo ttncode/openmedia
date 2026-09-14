@@ -47,14 +47,18 @@ Otherwise a client connecting to port 8080 directly can send its own
 `X-Forwarded-For` header and choose the address the per-client rate limits
 see. [Security](/security#rate-limiting) explains which limits still hold.
 
-`OPENMEDIA_TRUSTED_PROXY_HOPS` (default `1`) tells the API how many
-`X-Forwarded-*` hops to trust when reading the client's real address, used
-for rate limiting and the cross-site guard. Set it to the number of proxies
-between the browser and the `web` container: `1` for a single reverse proxy
-in front of Compose, `0` if the API is reached directly (no proxy at all),
-higher if you chain more than one proxy. A value too low reads a proxy's own
-address as the client's; a value too high reads a spoofable header as if a
-trusted proxy set it.
+`OPENMEDIA_TRUSTED_PROXY_HOPS` (default and minimum `1`) tells the API how
+many `X-Forwarded-For` entries, counted from the right, to trust when reading
+the client's real address for rate limiting. The `web` container does not add
+an entry of its own: it passes the header on as it arrived, or sets it to the
+connecting address when there is none. So `1` is right both with no reverse
+proxy and with one reverse proxy in front of `web`. Add 1 for each further
+proxy in a chain, for example a CDN in front of your reverse proxy, as long as
+every proxy after the first appends to the header (nginx:
+`$proxy_add_x_forwarded_for`). A value too low reads a proxy's own address as
+the client's; a value too high reads a spoofable entry as if a trusted proxy
+had set it. The forwarded host and protocol are always read from one hop, the
+`web` container, whatever this is set to.
 
 ## Backups
 

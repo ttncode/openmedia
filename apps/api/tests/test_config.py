@@ -35,3 +35,11 @@ def test_out_of_range_value_is_rejected(monkeypatch: pytest.MonkeyPatch) -> None
     monkeypatch.setenv("OPENMEDIA_MAX_CONCURRENT", "9")
     with pytest.raises(ValueError, match="OPENMEDIA_MAX_CONCURRENT"):
         load_settings()
+
+
+def test_trusted_proxy_hops_must_count_the_web_proxy(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("OPENMEDIA_TRUSTED_PROXY_HOPS", "0")
+    with pytest.raises(ValueError, match="OPENMEDIA_TRUSTED_PROXY_HOPS"):
+        load_settings()
