@@ -29,7 +29,10 @@ describe('i18n', () => {
     expect(en.settings.cookiesLoaded('youtube.com', 1)).toBe(
       'Loaded for youtube.com, expires in 1 day',
     );
-    expect(en.island.playlistAdded(1)).toBe('Added 1 video from the playlist');
+    expect(en.island.playlistAdded(1)).toBe('Added 1 item from the playlist');
+    expect(vietnamese.island.playlistAdded(26)).toBe(
+      'Đã thêm 26 mục từ playlist',
+    );
   });
 
   it('contains no dash characters reserved by the style guide', () => {

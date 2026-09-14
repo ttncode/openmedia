@@ -199,7 +199,7 @@ export const vi: Messages = {
   island: {
     fetched: 'Đã lấy xong thông tin',
     playlistAdded: (count: number): string =>
-      `Đã thêm ${count} video từ playlist`,
+      `Đã thêm ${count} mục từ playlist`,
     downloaded: (title: string): string => `Đã tải xong: ${title}`,
     cancelled: 'Đã hủy tải',
     removedFromQueue: 'Đã bỏ khỏi hàng đợi',

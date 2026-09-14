@@ -205,7 +205,7 @@ export const en = {
   island: {
     fetched: 'Info ready',
     playlistAdded: (count: number): string =>
-      `Added ${counted(count, 'video')} from the playlist`,
+      `Added ${counted(count, 'item')} from the playlist`,
     downloaded: (title: string): string => `Downloaded: ${title}`,
     cancelled: 'Download cancelled',
     removedFromQueue: 'Removed from queue',
