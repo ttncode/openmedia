@@ -56,7 +56,10 @@ export const en = {
       percent: number,
       speed: string,
       remaining: string,
-    ): string => `${percent}% · ${speed}, ${remaining}`,
+    ): string =>
+      [`${percent}%`, [speed, remaining].filter(Boolean).join(', ')]
+        .filter(Boolean)
+        .join(' · '),
     cancelled: 'Cancelled',
     listLabel: 'Download queue',
   },

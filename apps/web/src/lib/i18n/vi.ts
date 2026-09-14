@@ -55,7 +55,10 @@ export const vi: Messages = {
       percent: number,
       speed: string,
       remaining: string,
-    ): string => `${percent}% · ${speed}, ${remaining}`,
+    ): string =>
+      [`${percent}%`, [speed, remaining].filter(Boolean).join(', ')]
+        .filter(Boolean)
+        .join(' · '),
     cancelled: 'Đã hủy',
     listLabel: 'Hàng đợi tải xuống',
   },

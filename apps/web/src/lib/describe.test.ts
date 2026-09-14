@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Job } from './api/types';
 import { en } from './i18n/en';
+import { vi } from './i18n/vi';
 import { expiryText, remainingText, rowLine } from './describe';
 
 const base: Job = {
@@ -110,5 +111,28 @@ describe('describe', () => {
         'en',
       ).tone,
     ).toBe('error');
+  });
+
+  it('leaves out speed and time left until the download reports them', () => {
+    const job = {
+      type: 'job' as const,
+      id: 'j',
+      media,
+      formats: [],
+      options,
+      linkedAt: 0,
+    };
+    const starting = {
+      ...base,
+      progress: 0,
+      speed_bps: null,
+      eta_seconds: null,
+    };
+    expect(rowLine({ ...job, job: starting }, en, 'en').text).toBe('0%');
+    expect(rowLine({ ...job, job: starting }, vi, 'vi').text).toBe('0%');
+    expect(
+      rowLine({ ...job, job: { ...starting, speed_bps: 4_200_000 } }, en, 'en')
+        .text,
+    ).toBe('0% · 4.2 MB/s');
   });
 });
