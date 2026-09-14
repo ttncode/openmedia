@@ -16,6 +16,7 @@ const INFO = {
   formats: [],
   subtitle_languages: [],
   has_chapters: false,
+  is_playlist: false,
 };
 
 function job(id: string, status: Job["status"] = "error"): Job {

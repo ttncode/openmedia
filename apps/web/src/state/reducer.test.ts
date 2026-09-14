@@ -22,6 +22,7 @@ const INFO: MediaInfo = {
   ],
   subtitle_languages: [],
   has_chapters: false,
+  is_playlist: false,
 };
 
 function job(overrides: Partial<Job> = {}): Job {

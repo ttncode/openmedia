@@ -9,7 +9,9 @@ the links it contains.
 
 If a link belongs to a playlist, OpenMedia asks whether to add only that
 video or the whole playlist, up to the server's playlist item limit (see
-[Configuration](/configuration)).
+[Configuration](/configuration)). A link that is itself a playlist or an
+album, such as an Internet Archive item with several files, adds each of its
+items to the queue.
 
 ## Formats and quality
 

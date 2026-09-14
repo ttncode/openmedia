@@ -55,15 +55,27 @@ export function createCommands(
     }
   };
 
-  const fetchOne = async (url: string): Promise<string> => {
+  const fetchOne = async (url: string): Promise<string[]> => {
     const id = nextItemId();
     dispatch({ type: 'fetch/started', id, url });
     try {
-      dispatch({ type: 'fetch/succeeded', id, url, info: await api.info(url) });
+      const info = await api.info(url);
+      if (info.is_playlist) return await replaceWithEntries(id, url);
+      dispatch({ type: 'fetch/succeeded', id, url, info });
     } catch (error) {
       dispatch({ type: 'fetch/failed', id, code: errorCode(error) });
     }
-    return id;
+    return [id];
+  };
+
+  const replaceWithEntries = async (
+    id: string,
+    url: string,
+  ): Promise<string[]> => {
+    const { urls } = await api.playlist(url);
+    dispatch({ type: 'item/removed', id });
+    const entries = urls.filter((entry) => entry !== url);
+    return (await Promise.all(entries.map(fetchOne))).flat();
   };
 
   const countReady = (ids: readonly string[]): number =>
@@ -107,12 +119,12 @@ export function createCommands(
     fetchLinks: (urls, scope) =>
       guarded(async () => {
         const targets = await expand(urls, scope);
-        const ids = await Promise.all(targets.map(fetchOne));
+        const ids = (await Promise.all(targets.map(fetchOne))).flat();
         if (countReady(ids) > 0)
           notify({
             tone: 'success',
-            message: targets.length > urls.length ? 'playlistAdded' : 'fetched',
-            count: targets.length,
+            message: ids.length > urls.length ? 'playlistAdded' : 'fetched',
+            count: ids.length,
           });
       }),
     startDownload,

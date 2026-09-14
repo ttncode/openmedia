@@ -180,6 +180,8 @@ def build_download_command(request: DownloadRequest) -> list[str]:
     return [
         *base_command(),
         "--no-playlist",
+        "--playlist-items",
+        "1",
         "--newline",
         "--no-colors",
         "--no-warnings",
@@ -292,6 +294,7 @@ def summarize_info(info: Mapping[str, Any]) -> dict[str, object]:
         "formats": _best_formats_by_height(info.get("formats") or []),
         "subtitle_languages": sorted((info.get("subtitles") or {}).keys()),
         "has_chapters": bool(info.get("chapters")),
+        "is_playlist": info.get("_type") == "playlist",
     }
 
 

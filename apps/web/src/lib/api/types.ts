@@ -25,6 +25,7 @@ export interface MediaInfo {
   readonly formats: readonly MediaFormat[];
   readonly subtitle_languages: readonly string[];
   readonly has_chapters: boolean;
+  readonly is_playlist: boolean;
 }
 
 export interface PlaylistInfo {

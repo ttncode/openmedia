@@ -29,6 +29,7 @@ const INFO = {
   formats: [],
   subtitle_languages: [],
   has_chapters: false,
+  is_playlist: false,
 };
 
 describe('commands', () => {
@@ -76,6 +77,29 @@ describe('commands', () => {
       'playlist',
     );
     expect(info).toHaveBeenCalledTimes(2);
+  });
+
+  it('adds the entries of a link that resolves to a playlist', async () => {
+    const album = 'https://archive.org/details/fables';
+    vi.spyOn(api, 'info').mockImplementation(async (url) =>
+      url === album ? { ...INFO, is_playlist: true } : INFO,
+    );
+    const playlist = vi.spyOn(api, 'playlist').mockResolvedValue({
+      title: 'Fables',
+      count: 2,
+      urls: [
+        'https://archive.org/download/fables/1.mp3',
+        'https://archive.org/download/fables/2.mp3',
+      ],
+    });
+    const { commands, state } = harness();
+    await commands.fetchLinks([album], 'single');
+    expect(playlist).toHaveBeenCalledWith(album);
+    expect(state().items.map((item) => item.type)).toEqual(['ready', 'ready']);
+    expect(state().notice).toMatchObject({
+      message: 'playlistAdded',
+      count: 2,
+    });
   });
 
   it('starts a download and cancels it back to ready', async () => {

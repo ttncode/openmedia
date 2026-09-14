@@ -44,6 +44,7 @@ def test_url_is_always_the_final_argument_after_the_separator() -> None:
     assert value_after(command, "-o") == "media.%(ext)s"
     assert value_after(command, "--max-filesize") == "4096M"
     assert "--newline" in command and "--no-playlist" in command
+    assert value_after(command, "--playlist-items") == "1"
 
 
 def test_mp4_prefers_compatible_codecs_for_a_chosen_format() -> None:
@@ -197,6 +198,12 @@ def test_summarize_keeps_best_format_per_height() -> None:
     assert summary["subtitle_languages"] == ["en", "vi"]
     assert summary["has_chapters"] is True
     assert summary["platform"] == "Youtube"
+    assert summary["is_playlist"] is False
+
+
+def test_summarize_marks_links_that_resolve_to_a_playlist() -> None:
+    summary = summarize_info({"_type": "playlist", "title": "Fables", "entries": []})
+    assert summary["is_playlist"] is True
 
 
 class RecordingRunner:
