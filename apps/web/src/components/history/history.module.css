@@ -1,0 +1,9 @@
+.glyph {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-thumb);
+  background: var(--fill);
+  color: var(--secondary);
+}

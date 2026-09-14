@@ -1,9 +1,6 @@
 import type { ReactNode } from "react";
+import { LOGO_FRAME_PATH, LOGO_WAVE_PATH } from "@/lib/brand";
 import styles from "./controls.module.css";
-
-export const LOGO_FRAME_PATH =
-  "M9 22 V9 H22 M42 9 H55 V22 M55 42 V55 H42 M22 55 H9 V42";
-export const LOGO_WAVE_PATH = "M23 27 V37 M32 20 V44 M41 25 V39";
 
 export function BrandMark({ size = 26 }: { size?: number }): ReactNode {
   return (

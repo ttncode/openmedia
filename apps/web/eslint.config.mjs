@@ -14,7 +14,11 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
   ]),
   {
-    files: ["src/components/queue/Thumbnail.tsx"],
+    files: [
+      "src/components/queue/Thumbnail.tsx",
+      "src/app/apple-icon.tsx",
+      "src/app/pwa-icon/**",
+    ],
     rules: { "@next/next/no-img-element": "off" },
   },
 ]);

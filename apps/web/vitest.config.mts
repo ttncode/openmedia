@@ -17,7 +17,7 @@ export default defineConfig({
           name: "dom",
           environment: "jsdom",
           include: ["src/**/*.test.{ts,tsx}"],
-          exclude: ["src/app/api/**"],
+          exclude: ["src/app/api/**", "src/app/manifest.test.ts"],
           setupFiles: ["./src/test/setup.ts"],
         },
       },
@@ -26,7 +26,7 @@ export default defineConfig({
         test: {
           name: "node",
           environment: "node",
-          include: ["src/app/api/**/*.test.ts"],
+          include: ["src/app/api/**/*.test.ts", "src/app/manifest.test.ts"],
         },
       },
     ],

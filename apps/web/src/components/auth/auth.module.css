@@ -1,0 +1,59 @@
+.screen {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  background: var(--window);
+  padding: 24px;
+}
+.card {
+  display: grid;
+  gap: 16px;
+  justify-items: center;
+  width: min(100%, 340px);
+  padding: 32px 28px;
+  border-radius: var(--radius-panel);
+  background: var(--grouped);
+  box-shadow: var(--shadow-float);
+  text-align: center;
+}
+.card h1 {
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+.field {
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  text-align: left;
+  font-size: 13px;
+  color: var(--secondary);
+}
+.field input {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 22px;
+  background: var(--cell);
+  box-shadow:
+    var(--shadow-soft),
+    inset 0 0 0 0.5px var(--separator);
+  color: var(--label);
+  font-size: 15px;
+  transition: box-shadow 0.25s ease;
+}
+.field input:focus-visible {
+  outline: none;
+  box-shadow:
+    var(--shadow-soft),
+    0 0 0 3.5px color-mix(in srgb, var(--accent) 38%, transparent),
+    inset 0 0 0 0.5px var(--accent);
+}
+.shake {
+  animation: shake 0.46s var(--ease-out);
+}
+.error {
+  color: var(--red-text);
+  font-size: 13px;
+}
