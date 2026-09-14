@@ -97,4 +97,21 @@ describe("TrimEditor", () => {
     fireEvent.pointerDown(handle, { clientX: 400, pointerId: 1 });
     expect(onChange).toHaveBeenLastCalledWith(null);
   });
+
+  it("keeps a quote in the thumbnail url inside the filmstrip url", () => {
+    render(
+      <TrimEditor
+        duration={120}
+        value={null}
+        onChange={vi.fn()}
+        thumbnail={'https://i.example/a") , url("https://evil.example/x.png'}
+      />,
+    );
+    const track = screen.getByRole("slider", {
+      name: "Start point",
+    }).parentElement!;
+    expect(track.style.backgroundImage).toBe(
+      'url("https://i.example/a\\") , url(\\"https://evil.example/x.png")',
+    );
+  });
 });

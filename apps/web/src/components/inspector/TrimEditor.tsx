@@ -132,7 +132,7 @@ export function TrimEditor({
   const endPercent = (range.end / duration) * 100;
   const filmstrip = thumbnail
     ? {
-        backgroundImage: `url("${thumbnail}")`,
+        backgroundImage: `url(${JSON.stringify(thumbnail)})`,
         backgroundSize: `${FRAME_WIDTH}px 100%`,
       }
     : undefined;
