@@ -55,7 +55,7 @@ export function createCommands(
     }
   };
 
-  const fetchOne = async (url: string): Promise<void> => {
+  const fetchOne = async (url: string): Promise<string> => {
     const id = nextItemId();
     dispatch({ type: 'fetch/started', id, url });
     try {
@@ -63,7 +63,13 @@ export function createCommands(
     } catch (error) {
       dispatch({ type: 'fetch/failed', id, code: errorCode(error) });
     }
+    return id;
   };
+
+  const countReady = (ids: readonly string[]): number =>
+    getState().items.filter(
+      (item) => item.type === 'ready' && ids.includes(item.id),
+    ).length;
 
   const expand = async (
     urls: readonly string[],
@@ -101,11 +107,8 @@ export function createCommands(
     fetchLinks: (urls, scope) =>
       guarded(async () => {
         const targets = await expand(urls, scope);
-        await Promise.all(targets.map(fetchOne));
-        const ready = getState().items.filter(
-          (item) => item.type === 'ready',
-        ).length;
-        if (ready > 0)
+        const ids = await Promise.all(targets.map(fetchOne));
+        if (countReady(ids) > 0)
           notify({
             tone: 'success',
             message: targets.length > urls.length ? 'playlistAdded' : 'fetched',

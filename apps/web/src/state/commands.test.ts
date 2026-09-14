@@ -50,6 +50,19 @@ describe('commands', () => {
     ).toEqual(['fetch-error', 'ready']);
   });
 
+  it('announces info only when the new links produced ready items', async () => {
+    vi.spyOn(api, 'info').mockImplementation(async (url) => {
+      if (url.includes('bad'))
+        throw new ApiRequestError(400, 'private_network', 'no', null);
+      return INFO;
+    });
+    const { commands, state } = harness();
+    await commands.fetchLinks(['https://youtu.be/a'], 'single');
+    const firstNotice = state().notice;
+    await commands.fetchLinks(['https://bad.example/x'], 'single');
+    expect(state().notice).toBe(firstNotice);
+  });
+
   it('expands playlists before fetching', async () => {
     vi.spyOn(api, 'playlist').mockResolvedValue({
       title: 'Mix',
