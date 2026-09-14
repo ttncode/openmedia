@@ -7,16 +7,42 @@ import type { Action, AppState } from './types';
 function harness(): {
   commands: ReturnType<typeof createCommands>;
   state: () => AppState;
+  notices: () => number;
 } {
   let state = initialState();
+  let noticeCount = 0;
   const dispatch = (action: Action): void => {
+    if (action.type === 'notice/shown') noticeCount += 1;
     state = reducer(state, action);
   };
   return {
     commands: createCommands(dispatch, () => state),
     state: () => state,
+    notices: () => noticeCount,
   };
 }
+
+function deferred<T>(): {
+  promise: Promise<T>;
+  resolve: (value: T) => void;
+} {
+  let resolve: (value: T) => void = () => undefined;
+  const promise = new Promise<T>((settle) => {
+    resolve = settle;
+  });
+  return { promise, resolve };
+}
+
+const SIGNED_OUT = {
+  auth_required: true,
+  authenticated: false,
+  limits: { max_filesize_mb: 1, max_playlist_items: 1 },
+};
+
+const unreachable = (): ApiRequestError =>
+  new ApiRequestError(0, 'api_unreachable', 'down', null);
+const expired = (): ApiRequestError =>
+  new ApiRequestError(401, 'auth_required', 'Sign in to continue.', null);
 
 const INFO = {
   id: 'a',
@@ -229,5 +255,90 @@ describe('commands', () => {
       tone: 'error',
       message: 'invalid_option',
     });
+  });
+
+  it('shows the sign in screen when a poll finds the session expired', async () => {
+    vi.spyOn(api, 'storage').mockRejectedValue(expired());
+    vi.spyOn(api, 'jobs').mockRejectedValue(expired());
+    vi.spyOn(api, 'session').mockResolvedValue(SIGNED_OUT);
+    const { commands, state, notices } = harness();
+    await commands.syncJobs();
+    expect(state().session).toEqual(SIGNED_OUT);
+    expect(notices()).toBe(0);
+  });
+
+  it('reloads the session when any command meets an expired session', async () => {
+    vi.spyOn(api, 'updateSettings').mockRejectedValue(expired());
+    vi.spyOn(api, 'session').mockResolvedValue(SIGNED_OUT);
+    const { commands, state } = harness();
+    await commands.saveSettings({ max_concurrent: 2 });
+    expect(state().session).toEqual(SIGNED_OUT);
+  });
+
+  it('reloads the session when fetching links meets an expired session', async () => {
+    vi.spyOn(api, 'info').mockRejectedValue(expired());
+    const session = vi.spyOn(api, 'session').mockResolvedValue(SIGNED_OUT);
+    const { commands, state } = harness();
+    await commands.fetchLinks(
+      ['https://youtu.be/a', 'https://youtu.be/b'],
+      'single',
+    );
+    expect(session).toHaveBeenCalledTimes(1);
+    expect(state().session).toEqual(SIGNED_OUT);
+  });
+
+  it('reports an outage once until a poll succeeds again', async () => {
+    vi.spyOn(api, 'storage').mockRejectedValue(unreachable());
+    const jobs = vi
+      .spyOn(api, 'jobs')
+      .mockRejectedValueOnce(unreachable())
+      .mockRejectedValueOnce(unreachable())
+      .mockRejectedValueOnce(unreachable())
+      .mockResolvedValueOnce([])
+      .mockRejectedValueOnce(unreachable());
+    const { commands, notices } = harness();
+    for (let tick = 0; tick < 3; tick += 1) await commands.syncJobs();
+    expect(notices()).toBe(1);
+    await commands.syncJobs();
+    await commands.syncJobs();
+    expect(jobs).toHaveBeenCalledTimes(5);
+    expect(notices()).toBe(2);
+  });
+
+  it('skips a poll while the previous one is still running', async () => {
+    vi.spyOn(api, 'storage').mockResolvedValue({
+      used_bytes: 0,
+      limit_bytes: null,
+      free_bytes: 1,
+    });
+    const pending = deferred<[]>();
+    const jobs = vi.spyOn(api, 'jobs').mockReturnValue(pending.promise);
+    const { commands } = harness();
+    const first = commands.syncJobs();
+    await commands.syncJobs();
+    expect(jobs).toHaveBeenCalledTimes(1);
+    pending.resolve([]);
+    await first;
+  });
+
+  it('keeps a removed job away when a poll from before the removal returns', async () => {
+    vi.spyOn(api, 'info').mockResolvedValue(INFO);
+    vi.spyOn(api, 'download').mockResolvedValue({ job_id: 'j1', job: JOB });
+    vi.spyOn(api, 'removeJob').mockResolvedValue(undefined);
+    vi.spyOn(api, 'storage').mockResolvedValue({
+      used_bytes: 0,
+      limit_bytes: null,
+      free_bytes: 1,
+    });
+    const stalePoll = deferred<(typeof JOB)[]>();
+    vi.spyOn(api, 'jobs').mockReturnValue(stalePoll.promise);
+    const { commands, state } = harness();
+    await commands.fetchLinks(['https://youtu.be/a'], 'single');
+    await commands.startDownload(state().items[0].id);
+    const poll = commands.syncJobs();
+    await commands.removeItem('j1');
+    stalePoll.resolve([JOB]);
+    await poll;
+    expect(state().items).toEqual([]);
   });
 });

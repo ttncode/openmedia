@@ -1,5 +1,5 @@
 import { api, ApiRequestError } from '@/lib/api/client';
-import type { RuntimeSettings } from '@/lib/api/types';
+import type { Job, RuntimeSettings, SessionInfo } from '@/lib/api/types';
 import { hasPlaylist } from '@/lib/links';
 import { toDownloadRequest } from './options';
 import type { Action, AppState, Notice, PlaylistScope } from './types';
@@ -27,6 +27,8 @@ export interface Commands {
   signOut(): Promise<void>;
 }
 
+const AUTH_REQUIRED = 'auth_required';
+
 let noticeSequence = 0;
 let itemSequence = 0;
 
@@ -35,6 +37,10 @@ const nextItemId = (): string =>
 
 function errorCode(error: unknown): string {
   return error instanceof ApiRequestError ? error.code : 'unknown_error';
+}
+
+function needsSignIn(session: SessionInfo): boolean {
+  return session.auth_required && !session.authenticated;
 }
 
 export function createCommands(
@@ -48,11 +54,26 @@ export function createCommands(
     });
   const fail = (error: unknown): void =>
     notify({ tone: 'error', message: errorCode(error) });
+  const refreshSession = async (): Promise<SessionInfo> => {
+    const session = await api.session();
+    dispatch({ type: 'session/loaded', session });
+    return session;
+  };
+  const report = async (error: unknown): Promise<void> => {
+    try {
+      const signedOut =
+        errorCode(error) === AUTH_REQUIRED &&
+        needsSignIn(await refreshSession());
+      if (!signedOut) fail(error);
+    } catch (sessionError) {
+      fail(sessionError);
+    }
+  };
   const guarded = async (work: () => Promise<void>): Promise<void> => {
     try {
       await work();
     } catch (error) {
-      fail(error);
+      await report(error);
     }
   };
 
@@ -106,6 +127,14 @@ export function createCommands(
       ? fetchEntries((await api.playlist(url)).urls)
       : fetchOne(url);
 
+  const hasExpiredSessionRow = (ids: readonly string[]): boolean =>
+    getState().items.some(
+      (item) =>
+        item.type === 'fetch-error' &&
+        item.code === AUTH_REQUIRED &&
+        ids.includes(item.id),
+    );
+
   const countReady = (ids: readonly string[]): number =>
     getState().items.filter(
       (item) => item.type === 'ready' && ids.includes(item.id),
@@ -121,12 +150,47 @@ export function createCommands(
         keepLastStorage,
       );
 
+  const removedJobs = new Map<string, number>();
+
+  const forgetRemovedBefore = (requestedAt: number): void =>
+    removedJobs.forEach((removedAt, jobId) => {
+      if (removedAt < requestedAt) removedJobs.delete(jobId);
+    });
+
+  const withoutRemoved = (jobs: readonly Job[], requestedAt: number): Job[] =>
+    jobs.filter((job) => (removedJobs.get(job.job_id) ?? -1) < requestedAt);
+
   const syncJobs = async (): Promise<void> => {
     const requestedAt = Date.now();
     const storageRefresh = refreshStorage();
-    const jobs = await api.jobs();
+    const jobs = withoutRemoved(await api.jobs(), requestedAt);
+    forgetRemovedBefore(requestedAt);
     dispatch({ type: 'jobs/synced', jobs, requestedAt });
     await storageRefresh;
+  };
+
+  let outage = false;
+  let polling = false;
+
+  const pollJobs = async (): Promise<void> => {
+    try {
+      await syncJobs();
+      outage = false;
+    } catch (error) {
+      if (errorCode(error) === AUTH_REQUIRED) return report(error);
+      if (!outage) fail(error);
+      outage = true;
+    }
+  };
+
+  const pollUnlessBusy = async (): Promise<void> => {
+    if (polling) return;
+    polling = true;
+    try {
+      await pollJobs();
+    } finally {
+      polling = false;
+    }
   };
 
   const startDownload = async (itemId: string): Promise<void> =>
@@ -141,12 +205,13 @@ export function createCommands(
 
   return {
     notify,
-    syncJobs: () => guarded(syncJobs),
+    syncJobs: pollUnlessBusy,
     fetchLinks: (urls, scope) =>
       guarded(async () => {
         const ids = (
           await Promise.all(urls.map((url) => fetchScoped(url, scope)))
         ).flat();
+        if (hasExpiredSessionRow(ids)) await refreshSession();
         if (countReady(ids) > 0)
           notify({
             tone: 'success',
@@ -187,7 +252,10 @@ export function createCommands(
         const item = getState().items.find(
           (candidate) => candidate.id === itemId,
         );
-        if (item?.type === 'job') await api.removeJob(itemId);
+        if (item?.type === 'job') {
+          await api.removeJob(itemId);
+          removedJobs.set(itemId, Date.now());
+        }
         dispatch({ type: 'item/removed', id: itemId });
       }),
     downloadAgain: (entryId) =>
