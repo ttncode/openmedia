@@ -145,6 +145,15 @@ describe('commands', () => {
     expect(state().items[0].type).toBe('ready');
   });
 
+  it('refreshes storage usage whenever jobs are synced', async () => {
+    vi.spyOn(api, 'jobs').mockResolvedValue([]);
+    const usage = { used_bytes: 5_000_000, limit_bytes: null, free_bytes: 1 };
+    vi.spyOn(api, 'storage').mockResolvedValue(usage);
+    const { commands, state } = harness();
+    await commands.syncJobs();
+    expect(state().storage).toEqual(usage);
+  });
+
   it('shows a localized notice code when the API fails', async () => {
     vi.spyOn(api, 'updateSettings').mockRejectedValue(
       new ApiRequestError(400, 'invalid_option', 'bad', null),

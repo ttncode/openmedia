@@ -99,8 +99,9 @@ export function createCommands(
 
   const syncJobs = async (): Promise<void> => {
     const requestedAt = Date.now();
-    const jobs = await api.jobs();
+    const [jobs, storage] = await Promise.all([api.jobs(), api.storage()]);
     dispatch({ type: 'jobs/synced', jobs, requestedAt });
+    dispatch({ type: 'storage/loaded', storage });
   };
 
   const startDownload = async (itemId: string): Promise<void> =>
@@ -178,13 +179,11 @@ export function createCommands(
         const session = await api.session();
         dispatch({ type: 'session/loaded', session });
         if (session.auth_required && !session.authenticated) return;
-        const [settings, storage, cookies] = await Promise.all([
+        const [settings, cookies] = await Promise.all([
           api.settings(),
-          api.storage(),
           api.cookies(),
         ]);
         dispatch({ type: 'settings/loaded', settings });
-        dispatch({ type: 'storage/loaded', storage });
         dispatch({ type: 'cookies/loaded', cookies });
         await syncJobs();
       }),
