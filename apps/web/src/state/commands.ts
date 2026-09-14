@@ -111,11 +111,22 @@ export function createCommands(
       (item) => item.type === 'ready' && ids.includes(item.id),
     ).length;
 
+  const keepLastStorage = (): void => undefined;
+
+  const refreshStorage = (): Promise<void> =>
+    api
+      .storage()
+      .then(
+        (storage) => dispatch({ type: 'storage/loaded', storage }),
+        keepLastStorage,
+      );
+
   const syncJobs = async (): Promise<void> => {
     const requestedAt = Date.now();
-    const [jobs, storage] = await Promise.all([api.jobs(), api.storage()]);
+    const storageRefresh = refreshStorage();
+    const jobs = await api.jobs();
     dispatch({ type: 'jobs/synced', jobs, requestedAt });
-    dispatch({ type: 'storage/loaded', storage });
+    await storageRefresh;
   };
 
   const startDownload = async (itemId: string): Promise<void> =>

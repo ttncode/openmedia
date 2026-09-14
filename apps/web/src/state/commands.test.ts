@@ -32,6 +32,37 @@ const INFO = {
   is_playlist: false,
 };
 
+const JOB = {
+  job_id: 'j1',
+  url: 'https://youtu.be/a',
+  title: 'Pho',
+  status: 'queued',
+  progress: 0,
+  speed_bps: null,
+  eta_seconds: null,
+  downloaded_bytes: null,
+  total_bytes: null,
+  queue_position: 1,
+  options: {
+    kind: 'video',
+    container: 'mp4',
+    quality_height: null,
+    format_id: null,
+    audio_format: null,
+    audio_quality: null,
+    trim: null,
+    subtitles: null,
+    embed_metadata: true,
+  },
+  filename: null,
+  files: [],
+  error: null,
+  error_code: null,
+  created_at: '2026-09-14T00:00:00Z',
+  finished_at: null,
+  expires_at: null,
+} as const;
+
 describe('commands', () => {
   it('fetches each link and records failures with their codes', async () => {
     vi.spyOn(api, 'info').mockImplementation(async (url) => {
@@ -150,37 +181,7 @@ describe('commands', () => {
 
   it('starts a download and cancels it back to ready', async () => {
     vi.spyOn(api, 'info').mockResolvedValue(INFO);
-    const job = {
-      job_id: 'j1',
-      url: 'https://youtu.be/a',
-      title: 'Pho',
-      status: 'queued',
-      progress: 0,
-      speed_bps: null,
-      eta_seconds: null,
-      downloaded_bytes: null,
-      total_bytes: null,
-      queue_position: 1,
-      options: {
-        kind: 'video',
-        container: 'mp4',
-        quality_height: null,
-        format_id: null,
-        audio_format: null,
-        audio_quality: null,
-        trim: null,
-        subtitles: null,
-        embed_metadata: true,
-      },
-      filename: null,
-      files: [],
-      error: null,
-      error_code: null,
-      created_at: '2026-09-14T00:00:00Z',
-      finished_at: null,
-      expires_at: null,
-    } as const;
-    vi.spyOn(api, 'download').mockResolvedValue({ job_id: 'j1', job });
+    vi.spyOn(api, 'download').mockResolvedValue({ job_id: 'j1', job: JOB });
     const remove = vi.spyOn(api, 'removeJob').mockResolvedValue(undefined);
     const { commands, state } = harness();
     await commands.fetchLinks(['https://youtu.be/a'], 'single');
@@ -198,6 +199,24 @@ describe('commands', () => {
     const { commands, state } = harness();
     await commands.syncJobs();
     expect(state().storage).toEqual(usage);
+  });
+
+  it('keeps syncing jobs silently when storage usage fails', async () => {
+    const usage = { used_bytes: 5_000_000, limit_bytes: null, free_bytes: 1 };
+    vi.spyOn(api, 'storage')
+      .mockResolvedValueOnce(usage)
+      .mockRejectedValueOnce(
+        new ApiRequestError(500, 'unknown_error', 'x', null),
+      );
+    vi.spyOn(api, 'jobs')
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([JOB]);
+    const { commands, state } = harness();
+    await commands.syncJobs();
+    await commands.syncJobs();
+    expect(state().storage).toEqual(usage);
+    expect(state().notice).toBeNull();
+    expect(state().items.map((item) => item.id)).toEqual(['j1']);
   });
 
   it('shows a localized notice code when the API fails', async () => {
