@@ -144,6 +144,11 @@ def test_info_command_ends_with_separator_and_url() -> None:
             "ERROR: File is larger than max-filesize (5000 bytes > 10 bytes). Aborting.",
             "too_large",
         ),
+        (
+            "ERROR: Postprocessing: Error opening output files: Invalid argument",
+            "conversion_failed",
+        ),
+        ("ERROR: Postprocessing: Conversion failed!", "conversion_failed"),
         ("ERROR: something else broke", "extractor_error"),
     ],
 )

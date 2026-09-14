@@ -232,6 +232,8 @@ export const vi: Messages = {
     extractor_error: 'Không đọc được trang này. Hãy thử lại sau.',
     invalid_cookies:
       'File này không phải là file cookies.txt theo định dạng Netscape.',
+    conversion_failed:
+      'Không chuyển được file sang định dạng đã chọn. Hãy chọn MKV rồi thử lại.',
     nested_playlist:
       'Mục này cũng là một playlist. Hãy dán riêng liên kết của nó để thêm các mục bên trong.',
     empty_playlist: 'Playlist này không có mục nào để tải.',

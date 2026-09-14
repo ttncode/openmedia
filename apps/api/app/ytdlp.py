@@ -21,6 +21,9 @@ MEDIA_OUTPUT_TEMPLATE = "media.%(ext)s"
 INFO_TIMEOUT_SECONDS = 60.0
 PLAYLIST_TIMEOUT_SECONDS = 90.0
 MAX_ERROR_MESSAGE_LENGTH = 300
+CONVERSION_FAILED_MESSAGE = (
+    "The file could not be converted to the chosen format. Try MKV instead."
+)
 ERROR_PATTERNS = (
     (
         "sign in to confirm",
@@ -40,6 +43,9 @@ ERROR_PATTERNS = (
         "too_large",
         "The file is larger than the configured size limit.",
     ),
+    ("conversion failed", "conversion_failed", CONVERSION_FAILED_MESSAGE),
+    ("error opening output file", "conversion_failed", CONVERSION_FAILED_MESSAGE),
+    ("could not write header", "conversion_failed", CONVERSION_FAILED_MESSAGE),
 )
 
 

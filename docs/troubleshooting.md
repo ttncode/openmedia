@@ -33,6 +33,12 @@ A download is refused with a storage-full error once `OPENMEDIA_MAX_STORAGE_GB`
 is reached. Remove finished downloads, wait for retention to clean them up,
 or raise the limit.
 
+## "The file could not be converted to the chosen format"
+
+Some sites serve a single file whose video or audio codec MP4 cannot hold.
+OpenMedia remuxes it without re-encoding, so the conversion fails. Choose
+**MKV**, which accepts almost any codec, and download again.
+
 ## API unreachable
 
 Check that both containers are running and healthy:

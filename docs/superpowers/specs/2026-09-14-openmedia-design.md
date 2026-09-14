@@ -160,7 +160,7 @@ reclip clients working because they read `error`. Field names are snake_case.
 Error codes: `invalid_url`, `unsupported_url`, `private_network`, `invalid_option`,
 `not_found`, `file_not_ready`, `rate_limited`, `auth_required`, `invalid_password`,
 `cross_site_request`, `storage_full`, `too_large`, `bot_check`, `private_video`,
-`geo_blocked`, `unavailable`, `timeout`, `extractor_error`, `invalid_cookies`.
+`geo_blocked`, `unavailable`, `timeout`, `extractor_error`, `conversion_failed`, `invalid_cookies`.
 
 ### 4.4 Download request
 

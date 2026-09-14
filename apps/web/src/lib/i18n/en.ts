@@ -238,6 +238,8 @@ export const en = {
     timeout: 'The site took too long to respond. Try again.',
     extractor_error: 'The site could not be read. Try again later.',
     invalid_cookies: 'That file is not a cookies.txt file in Netscape format.',
+    conversion_failed:
+      'The file could not be converted to the chosen format. Choose MKV and try again.',
     nested_playlist:
       'This entry is itself a playlist. Paste its link on its own to add its items.',
     empty_playlist: 'This playlist has no items to download.',
