@@ -45,4 +45,13 @@ describe('trim math', () => {
     expect(nearestEdge({ start: 10, end: 50 }, 20)).toBe('start');
     expect(nearestEdge({ start: 10, end: 50 }, 40)).toBe('end');
   });
+
+  it('snaps the end to a fractional duration once it reaches the last whole second', () => {
+    const duration = 212.43;
+    const range = { start: 0, end: 150 };
+    expect(setEdge(range, 'end', duration, duration).end).toBe(duration);
+    expect(setEdge(range, 'end', 212, duration).end).toBe(duration);
+    expect(setEdge(range, 'end', 211.4, duration).end).toBe(211);
+    expect(nudgeEdge(range, 'end', 'End', false, duration)?.end).toBe(duration);
+  });
 });

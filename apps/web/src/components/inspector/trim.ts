@@ -13,18 +13,29 @@ export function fullRange(duration: number): TrimRange {
   return { start: 0, end: duration };
 }
 
+function roundedEnd(seconds: number, duration: number): number {
+  const rounded = Math.round(seconds);
+  return rounded >= Math.floor(duration) ? duration : rounded;
+}
+
 export function setEdge(
   range: TrimRange,
   edge: TrimEdge,
   seconds: number,
   duration: number,
 ): TrimRange {
-  const rounded = Math.round(seconds);
   return edge === 'start'
-    ? { start: clamp(rounded, 0, range.end - MIN_TRIM_SECONDS), end: range.end }
+    ? {
+        start: clamp(Math.round(seconds), 0, range.end - MIN_TRIM_SECONDS),
+        end: range.end,
+      }
     : {
         start: range.start,
-        end: clamp(rounded, range.start + MIN_TRIM_SECONDS, duration),
+        end: clamp(
+          roundedEnd(seconds, duration),
+          range.start + MIN_TRIM_SECONDS,
+          duration,
+        ),
       };
 }
 
