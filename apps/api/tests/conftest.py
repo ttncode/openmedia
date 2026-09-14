@@ -17,7 +17,7 @@ def make_settings(data_dir: Path, **overrides: Any) -> Settings:
         max_filesize_mb=4096,
         max_storage_gb=0,
         max_playlist_items=50,
-        rate_limit_per_minute=30,
+        rate_limit_per_minute=120,
         stall_timeout_seconds=180,
         allow_private_urls=False,
         trusted_proxy_hops=1,

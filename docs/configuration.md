@@ -33,7 +33,7 @@ matters when running `apps/web` from source against a separately running API.
 | `OPENMEDIA_MAX_FILESIZE_MB`       | `4096`    | Passed to yt-dlp as `--max-filesize`                                    |
 | `OPENMEDIA_MAX_STORAGE_GB`        | `0`       | Total download storage limit; `0` means unlimited                       |
 | `OPENMEDIA_MAX_PLAYLIST_ITEMS`    | `50`      | Upper bound for playlist expansion                                      |
-| `OPENMEDIA_RATE_LIMIT_PER_MINUTE` | `30`      | Per client, for info, playlist and download requests                    |
+| `OPENMEDIA_RATE_LIMIT_PER_MINUTE` | `120`     | Per client, for info, playlist and download requests                    |
 | `OPENMEDIA_STALL_TIMEOUT_SECONDS` | `180`     | A download with no output for this long is stopped                      |
 | `OPENMEDIA_ALLOW_PRIVATE_URLS`    | `false`   | Allows URLs that resolve to private networks                            |
 | `OPENMEDIA_TRUSTED_PROXY_HOPS`    | `1`       | Number of `X-Forwarded-*` hops trusted (the web proxy)                  |

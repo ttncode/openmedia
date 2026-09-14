@@ -74,7 +74,9 @@ def load_settings() -> Settings:
         max_filesize_mb=_integer("OPENMEDIA_MAX_FILESIZE_MB", 4096, 1, 1048576),
         max_storage_gb=_integer("OPENMEDIA_MAX_STORAGE_GB", 0, 0, 1048576),
         max_playlist_items=_integer("OPENMEDIA_MAX_PLAYLIST_ITEMS", 50, 1, 500),
-        rate_limit_per_minute=_integer("OPENMEDIA_RATE_LIMIT_PER_MINUTE", 30, 1, 10000),
+        rate_limit_per_minute=_integer(
+            "OPENMEDIA_RATE_LIMIT_PER_MINUTE", 120, 1, 10000
+        ),
         stall_timeout_seconds=_integer(
             "OPENMEDIA_STALL_TIMEOUT_SECONDS", 180, 10, 3600
         ),

@@ -10,12 +10,14 @@ def test_defaults_point_at_data_volume(monkeypatch: pytest.MonkeyPatch) -> None:
         "OPENMEDIA_DATA_DIR",
         "OPENMEDIA_MAX_CONCURRENT",
         "OPENMEDIA_ALLOW_PRIVATE_URLS",
+        "OPENMEDIA_RATE_LIMIT_PER_MINUTE",
     ):
         monkeypatch.delenv(name, raising=False)
     settings = load_settings()
     assert settings.data_dir == Path("/data")
     assert settings.max_concurrent == 3
     assert settings.allow_private_urls is False
+    assert settings.rate_limit_per_minute == 120
     assert settings.downloads_dir == Path("/data/downloads")
 
 
