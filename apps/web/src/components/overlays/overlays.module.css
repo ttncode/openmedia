@@ -322,3 +322,17 @@
   font-size: 17px;
   font-weight: 600;
 }
+
+@media (prefers-reduced-transparency: reduce) {
+  .dropOverlay {
+    background: var(--window);
+  }
+}
+
+@supports not (
+  (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+) {
+  .dropOverlay {
+    background: var(--window);
+  }
+}
