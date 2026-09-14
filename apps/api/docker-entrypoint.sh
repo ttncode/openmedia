@@ -17,14 +17,18 @@ update_ytdlp() {
   return 1
 }
 
-if [ "${OPENMEDIA_AUTO_UPDATE_YTDLP:-true}" = "true" ]; then
-  echo "openmedia: updating yt-dlp in $ytdlp_dir"
-  if ! update_ytdlp; then
-    echo "openmedia: yt-dlp update failed, using the bundled version"
+auto_update="$(printf '%s' "${OPENMEDIA_AUTO_UPDATE_YTDLP:-true}" | tr '[:upper:]' '[:lower:]')"
+case "$auto_update" in
+  1 | true | yes | on)
+    echo "openmedia: updating yt-dlp in $ytdlp_dir"
+    if ! update_ytdlp; then
+      echo "openmedia: yt-dlp update failed, using the bundled version"
+      rm -rf "$ytdlp_dir"
+    fi
+    ;;
+  *)
     rm -rf "$ytdlp_dir"
-  fi
-else
-  rm -rf "$ytdlp_dir"
-fi
+    ;;
+esac
 
 exec "$@"
