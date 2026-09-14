@@ -316,6 +316,26 @@
   --accent-text-d: #aeaeb2;
 }
 
+@media (prefers-reduced-transparency: reduce) {
+  :root:not([data-theme="light"]),
+  :root[data-theme="light"] {
+    --glass: var(--window);
+    --glass-strong: var(--elevated);
+    --hud: rgb(38 38 40);
+  }
+}
+
+@supports not (
+  (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+) {
+  :root:not([data-theme="light"]),
+  :root[data-theme="light"] {
+    --glass: var(--window);
+    --glass-strong: var(--elevated);
+    --hud: rgb(38 38 40);
+  }
+}
+
 *,
 *::before,
 *::after {
