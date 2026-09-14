@@ -193,15 +193,15 @@ Common arguments: `--no-playlist --newline --no-colors --no-warnings --restrict-
 --max-filesize {limit}M -P {job_dir} -o "media.%(ext)s"`, plus `--cookies {job copy}`
 when cookies exist and `--proxy` when configured.
 
-| Option          | Arguments                                                                                                                                                                   |
-| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Video MP4       | `-f "{format_id}+bestaudio[ext=m4a]/{format_id}+bestaudio/best"` or `-f "bv*[height<={h}]+ba/b[height<={h}]/b"`; `-S "vcodec:h264,acodec:aac"`; `--merge-output-format mp4` |
-| Video MKV       | Same selection without `-S`; `--merge-output-format mkv`                                                                                                                    |
-| Audio           | `-f "ba/b" -x --audio-format {fmt}`; `--audio-quality 320K` for `320k`, `0` for `best`                                                                                      |
-| Trim            | `--download-sections "*{start}-{end}" --force-keyframes-at-cuts`                                                                                                            |
-| Subtitles embed | `--write-subs --write-auto-subs --sub-langs "{langs}" --embed-subs`                                                                                                         |
-| Subtitles srt   | `--write-subs --write-auto-subs --sub-langs "{langs}" --convert-subs srt`                                                                                                   |
-| Metadata        | `--embed-metadata --embed-chapters`, and `--embed-thumbnail` except for WAV                                                                                                 |
+| Option          | Arguments                                                                                                                                                                                     |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Video MP4       | `-f "{format_id}+bestaudio[ext=m4a]/{format_id}+bestaudio/best"` or `-f "bv*[height<={h}]+ba/b[height<={h}]/b"`; `-S "vcodec:h264,acodec:aac"`; `--merge-output-format mp4 --remux-video mp4` |
+| Video MKV       | Same selection without `-S`; `--merge-output-format mkv --remux-video mkv`                                                                                                                    |
+| Audio           | `-f "ba/b" -x --audio-format {fmt}`; `--audio-quality 320K` for `320k`, `0` for `best`                                                                                                        |
+| Trim            | `--download-sections "*{start}-{end}" --force-keyframes-at-cuts`                                                                                                                              |
+| Subtitles embed | `--write-subs --write-auto-subs --sub-langs "{langs}" --embed-subs`                                                                                                                           |
+| Subtitles srt   | `--write-subs --write-auto-subs --sub-langs "{langs}" --convert-subs srt`                                                                                                                     |
+| Metadata        | `--embed-metadata --embed-chapters`, and `--embed-thumbnail` except for WAV                                                                                                                   |
 
 Info extraction uses `-J --no-playlist` (first JSON document) with a 60 second
 timeout. Playlist expansion uses `--flat-playlist -J --playlist-end {limit}`.

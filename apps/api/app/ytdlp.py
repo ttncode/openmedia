@@ -115,7 +115,15 @@ def _video_arguments(options: DownloadOptions) -> list[str]:
     else:
         selector = "bv*+ba/b"
     sorting = ["-S", "vcodec:h264,acodec:aac"] if options.container == "mp4" else []
-    return ["-f", selector, *sorting, "--merge-output-format", options.container]
+    return [
+        "-f",
+        selector,
+        *sorting,
+        "--merge-output-format",
+        options.container,
+        "--remux-video",
+        options.container,
+    ]
 
 
 def _audio_arguments(options: DownloadOptions) -> list[str]:

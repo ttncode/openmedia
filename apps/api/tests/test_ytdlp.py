@@ -64,6 +64,14 @@ def test_mkv_with_height_cap_skips_codec_sorting() -> None:
     assert value_after(command, "--merge-output-format") == "mkv"
 
 
+@pytest.mark.parametrize("container", ["mp4", "mkv"])
+def test_single_file_video_is_remuxed_into_the_chosen_container(container: str) -> None:
+    command = build_download_command(
+        request_for(parse_download_options({"container": container}))
+    )
+    assert value_after(command, "--remux-video") == container
+
+
 def test_audio_extraction_arguments() -> None:
     command = build_download_command(
         request_for(
@@ -76,6 +84,7 @@ def test_audio_extraction_arguments() -> None:
     assert "-x" in command
     assert value_after(command, "--audio-format") == "m4a"
     assert value_after(command, "--audio-quality") == "320K"
+    assert "--remux-video" not in command
 
 
 def test_trim_subtitles_metadata_and_cookies() -> None:
