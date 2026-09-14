@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { useStore } from "@/state/StoreProvider";
 import { BrandMark } from "../controls/BrandMark";
@@ -15,9 +16,7 @@ interface ToolbarProps {
   onOpenShortcuts: () => void;
 }
 
-function prefersDark(): boolean {
-  return window.matchMedia("(prefers-color-scheme: dark)").matches;
-}
+const DARK_SCHEME_QUERY = "(prefers-color-scheme: dark)";
 
 export function Toolbar({
   scrolled,
@@ -28,9 +27,10 @@ export function Toolbar({
 }: ToolbarProps): ReactNode {
   const { t } = useI18n();
   const { state, dispatch } = useStore();
+  const systemDark = useMediaQuery(DARK_SCHEME_QUERY);
   const isDark =
     state.preferences.theme === "dark" ||
-    (state.preferences.theme === "system" && prefersDark());
+    (state.preferences.theme === "system" && systemDark);
   const toggleTheme = (): void => {
     const apply = (): void =>
       dispatch({
