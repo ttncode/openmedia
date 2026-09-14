@@ -6,12 +6,29 @@ import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import styles from "./overlays.module.css";
 
-const SHORTCUTS = [
-  { keys: ["/"], label: "focus" },
-  { keys: ["⌘", "V"], label: "pasteFetch" },
-  { keys: ["Esc"], label: "close" },
-  { keys: ["?"], label: "show" },
-] as const;
+const APPLE_PLATFORM = /mac|iphone|ipad|ipod/i;
+
+interface NavigatorWithUserAgentData extends Navigator {
+  readonly userAgentData?: { readonly platform: string };
+}
+
+function pasteModifier(): string {
+  const browser: NavigatorWithUserAgentData = navigator;
+  const platform = browser.userAgentData?.platform || browser.platform;
+  return APPLE_PLATFORM.test(platform) ? "⌘" : "Ctrl";
+}
+
+function shortcutList(): ReadonlyArray<{
+  readonly keys: readonly string[];
+  readonly label: "focus" | "pasteFetch" | "close" | "show";
+}> {
+  return [
+    { keys: ["/"], label: "focus" },
+    { keys: [pasteModifier(), "V"], label: "pasteFetch" },
+    { keys: ["Esc"], label: "close" },
+    { keys: ["?"], label: "show" },
+  ];
+}
 
 export function ShortcutsHud({
   open,
@@ -44,7 +61,7 @@ export function ShortcutsHud({
       >
         <h2 id="shortcuts-title">{t.shortcuts.title}</h2>
         <dl className={styles.shortcutList}>
-          {SHORTCUTS.map((shortcut) => (
+          {shortcutList().map((shortcut) => (
             <div key={shortcut.label}>
               <dt>{t.shortcuts[shortcut.label]}</dt>
               <dd>
