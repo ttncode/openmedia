@@ -4,10 +4,10 @@ import { useEffect, useRef, type ChangeEvent, type ReactNode } from "react";
 import type { StorageUsage } from "@/lib/api/types";
 import { formatBytes, type Locale } from "@/lib/format";
 import type { Messages } from "@/lib/i18n/en";
-import { useI18n, type LanguagePreference } from "@/lib/i18n/I18nProvider";
+import { useI18n } from "@/lib/i18n/I18nProvider";
+import { DEFAULT_FORMATS, LANGUAGES } from "@/lib/preferences";
 import { ACCENTS, type ThemePreference } from "@/lib/theme";
 import { useStore } from "@/state/StoreProvider";
-import type { DefaultFormatId } from "@/state/types";
 import { Capsule } from "../controls/Capsule";
 import controlsStyles from "../controls/controls.module.css";
 import { Icon } from "../controls/Icon";
@@ -18,13 +18,6 @@ import { Sheet } from "../overlays/Sheet";
 import styles from "./settings.module.css";
 
 const RETENTION_CHOICES = ["15", "60", "360", "1440"] as const;
-const DEFAULT_FORMATS: readonly DefaultFormatId[] = [
-  "video-mp4-1080",
-  "video-mp4-720",
-  "audio-m4a",
-  "audio-mp3",
-];
-const LANGUAGES: readonly LanguagePreference[] = ["auto", "vi", "en"];
 const MILLISECONDS_PER_DAY = 86_400_000;
 
 interface SettingsSheetProps {

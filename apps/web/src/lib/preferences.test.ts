@@ -67,4 +67,37 @@ describe('preferences', () => {
     expect(restored.items).toEqual([]);
     expect(restored.history).toEqual([]);
   });
+
+  it('replaces stored preferences outside the allowed values with defaults', () => {
+    window.localStorage.setItem(
+      'openmedia.preferences',
+      JSON.stringify({
+        theme: 'neon',
+        accent: 'pink',
+        language: 'fr',
+        defaultFormat: 'video-webm-4k',
+        installHintDismissed: 'yes',
+      }),
+    );
+    expect(loadPersisted().preferences).toEqual({
+      ...DEFAULT_PREFERENCES,
+      accent: 'pink',
+    });
+    window.localStorage.setItem('openmedia.preferences', 'null');
+    expect(loadPersisted().preferences).toEqual(DEFAULT_PREFERENCES);
+  });
+
+  it('drops malformed queue and history entries', () => {
+    window.localStorage.setItem(
+      'openmedia.queue',
+      JSON.stringify([null, 3, {}, { id: 'x' }]),
+    );
+    window.localStorage.setItem(
+      'openmedia.history',
+      JSON.stringify([null, 'h', { title: 'no id' }]),
+    );
+    const restored = loadPersisted();
+    expect(restored.items).toEqual([]);
+    expect(restored.history).toEqual([]);
+  });
 });
