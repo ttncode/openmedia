@@ -161,4 +161,38 @@ describe("QueueRow", () => {
       "/api/file/d",
     );
   });
+
+  it("selects through a row button that sits beside the trailing actions", async () => {
+    const user = userEvent.setup();
+    const onSelect = vi.fn();
+    const item: QueueItem = {
+      type: "ready",
+      id: "r",
+      media,
+      formats: [],
+      options,
+    };
+    render(
+      wrap(
+        <ul>
+          <QueueRow
+            item={item}
+            selected
+            onSelect={onSelect}
+            onOpenCookies={vi.fn()}
+          />
+        </ul>,
+      ),
+    );
+    expect(screen.queryByRole("option")).toBeNull();
+    const row = screen.getByRole("button", { name: /Pho/ });
+    expect(row).toHaveAttribute("aria-current", "true");
+    const download = screen.getByRole("button", { name: "Download" });
+    expect(row.contains(download)).toBe(false);
+    await user.click(row);
+    expect(onSelect).toHaveBeenCalledWith("r");
+    row.focus();
+    await user.keyboard("{Enter}");
+    expect(onSelect).toHaveBeenCalledTimes(2);
+  });
 });

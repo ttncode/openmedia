@@ -23,7 +23,7 @@ export function Thumbnail({
   const [failed, setFailed] = useState(false);
   const showImage = src !== "" && !failed;
   return (
-    <div className={variant === "row" ? styles.thumb : styles.artwork}>
+    <span className={variant === "row" ? styles.thumb : styles.artwork}>
       {showImage ? (
         <img
           src={src}
@@ -41,6 +41,6 @@ export function Thumbnail({
         </span>
       )}
       {badge ? <span className={styles.artworkBadge}>{badge}</span> : null}
-    </div>
+    </span>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import type { KeyboardEvent, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { api } from "@/lib/api/client";
 import { rowLine } from "@/lib/describe";
 import { useI18n } from "@/lib/i18n/I18nProvider";
@@ -125,56 +125,44 @@ export function QueueRow({
   const line = rowLine(item, t, locale);
   const title = item.type === "fetch-error" ? item.url : item.media.title;
   const platform = item.type === "fetch-error" ? "other" : item.media.platform;
-  const select = (): void => onSelect(item.id);
-  const handleKey = (event: KeyboardEvent<HTMLLIElement>): void => {
-    if (
-      event.target === event.currentTarget &&
-      (event.key === "Enter" || event.key === " ")
-    ) {
-      event.preventDefault();
-      select();
-    }
-  };
   return (
-    <li
-      className={`${styles.row} ${styles.arriving}`}
-      role="option"
-      aria-selected={selected}
-      tabIndex={0}
-      onClick={select}
-      onKeyDown={handleKey}
-    >
-      {item.type === "fetch-error" ? (
-        <span className={`${styles.thumb} ${styles.errorThumb}`}>
-          <Icon name="warningCircle" size={20} />
-        </span>
-      ) : (
-        <Thumbnail
-          src={item.media.thumbnail}
-          kind={item.options.kind}
-          alt=""
-          variant="row"
-        />
-      )}
-      <span className={styles.rowText}>
-        <span className={styles.rowTitle}>{title}</span>
-        <span
-          className={`${styles.rowLine} ${line.tone === "error" ? styles.errorLine : ""}`}
-        >
-          <Icon
-            name={
-              line.tone === "error" ? "warningCircle" : PLATFORM_ICONS[platform]
-            }
-            size={13}
-          />
-          <span>{line.text}</span>
-        </span>
-      </span>
-      <span
-        className={styles.rowTrailing}
-        role="presentation"
-        onClick={(event) => event.stopPropagation()}
+    <li className={`${styles.row} ${styles.selectable} ${styles.arriving}`}>
+      <button
+        type="button"
+        className={styles.rowSelect}
+        aria-current={selected ? "true" : undefined}
+        onClick={() => onSelect(item.id)}
       >
+        {item.type === "fetch-error" ? (
+          <span className={`${styles.thumb} ${styles.errorThumb}`}>
+            <Icon name="warningCircle" size={20} />
+          </span>
+        ) : (
+          <Thumbnail
+            src={item.media.thumbnail}
+            kind={item.options.kind}
+            alt=""
+            variant="row"
+          />
+        )}
+        <span className={styles.rowText}>
+          <span className={styles.rowTitle}>{title}</span>
+          <span
+            className={`${styles.rowLine} ${line.tone === "error" ? styles.errorLine : ""}`}
+          >
+            <Icon
+              name={
+                line.tone === "error"
+                  ? "warningCircle"
+                  : PLATFORM_ICONS[platform]
+              }
+              size={13}
+            />
+            <span>{line.text}</span>
+          </span>
+        </span>
+      </button>
+      <span className={styles.rowTrailing}>
         <Trailing item={item} onOpenCookies={onOpenCookies} />
       </span>
     </li>

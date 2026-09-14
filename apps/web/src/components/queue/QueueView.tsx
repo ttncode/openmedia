@@ -46,11 +46,7 @@ export function QueueView({
         </div>
       </div>
       {items.length > 0 ? (
-        <ul
-          className={styles.list}
-          role="listbox"
-          aria-label={t.queue.listLabel}
-        >
+        <ul className={styles.list} aria-label={t.queue.listLabel}>
           {items.map((item) => (
             <QueueRow
               key={item.id}
