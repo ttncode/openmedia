@@ -36,6 +36,7 @@ export function LoginScreen(): ReactNode {
           <input
             type="password"
             autoComplete="current-password"
+            autoFocus
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             required

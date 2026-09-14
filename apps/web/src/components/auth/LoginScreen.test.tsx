@@ -6,6 +6,15 @@ import { StoreProvider } from "@/state/StoreProvider";
 import { LoginScreen } from "./LoginScreen";
 
 describe("LoginScreen", () => {
+  it("focuses the password field when it opens", () => {
+    render(
+      <StoreProvider>
+        <LoginScreen />
+      </StoreProvider>,
+    );
+    expect(screen.getByLabelText("Password")).toHaveFocus();
+  });
+
   it("shows an error for a wrong password", async () => {
     vi.spyOn(api, "session").mockResolvedValue({
       auth_required: true,
