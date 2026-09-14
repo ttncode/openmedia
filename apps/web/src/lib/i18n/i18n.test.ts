@@ -23,6 +23,15 @@ describe('i18n', () => {
     expect(keysOf(vietnamese).sort()).toEqual(keysOf(en).sort());
   });
 
+  it('uses singular English nouns for a count of one', () => {
+    expect(en.queue.summary(1, 0, 1)).toBe('1 item, 0 downloading, 1 done');
+    expect(en.queue.summary(2, 1, 0)).toBe('2 items, 1 downloading, 0 done');
+    expect(en.settings.cookiesLoaded('youtube.com', 1)).toBe(
+      'Loaded for youtube.com, expires in 1 day',
+    );
+    expect(en.island.playlistAdded(1)).toBe('Added 1 video from the playlist');
+  });
+
   it('contains no dash characters reserved by the style guide', () => {
     const strings = JSON.stringify([en, vietnamese]);
     expect(strings).not.toMatch(/[–—]/);

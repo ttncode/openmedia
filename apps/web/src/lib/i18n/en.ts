@@ -1,3 +1,6 @@
+const counted = (count: number, noun: string): string =>
+  `${count} ${count === 1 ? noun : `${noun}s`}`;
+
 export const en = {
   app: { name: 'OpenMedia', sampleNote: 'Sample data' },
   nav: {
@@ -33,7 +36,7 @@ export const en = {
   },
   queue: {
     summary: (total: number, active: number, done: number): string =>
-      `${total} items, ${active} downloading, ${done} done`,
+      `${counted(total, 'item')}, ${active} downloading, ${done} done`,
     startAll: (count: number): string => `Download all (${count})`,
     concurrency: (count: number): string => `Up to ${count} downloads at once`,
     empty: 'Nothing here yet. Paste a link to start.',
@@ -137,7 +140,7 @@ export const en = {
     cookies: 'Cookies',
     cookiesNone: 'No cookies yet',
     cookiesLoaded: (domains: string, days: number): string =>
-      `Loaded for ${domains}, expires in ${days} days`,
+      `Loaded for ${domains}, expires in ${counted(days, 'day')}`,
     cookiesChoose: 'Choose cookies.txt',
     cookiesRemove: 'Remove',
     cookiesNote:
@@ -199,7 +202,7 @@ export const en = {
   island: {
     fetched: 'Info ready',
     playlistAdded: (count: number): string =>
-      `Added ${count} videos from the playlist`,
+      `Added ${counted(count, 'video')} from the playlist`,
     downloaded: (title: string): string => `Downloaded: ${title}`,
     cancelled: 'Download cancelled',
     removedFromQueue: 'Removed from queue',
