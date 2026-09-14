@@ -295,8 +295,9 @@ export function createCommands(
         );
         if (!entry) return;
         dispatch({ type: 'view/changed', view: 'queue', filter: 'all' });
-        await fetchOne(entry.url);
-        notify({ tone: 'success', message: 'addedAgain' });
+        const ids = await fetchOne(entry.url);
+        if (countReady(ids) > 0)
+          notify({ tone: 'success', message: 'addedAgain' });
       }),
     loadServerState: () =>
       guarded(async () => {

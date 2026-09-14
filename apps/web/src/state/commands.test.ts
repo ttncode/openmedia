@@ -277,6 +277,29 @@ describe('commands', () => {
     expect(state().items.map((item) => item.id)).toEqual(['j1']);
   });
 
+  it('says a history entry was added again only when its fetch succeeded', async () => {
+    vi.spyOn(api, 'info')
+      .mockRejectedValueOnce(
+        new ApiRequestError(400, 'unavailable', 'gone', null),
+      )
+      .mockResolvedValueOnce(INFO);
+    const { commands, state, notices } = harness();
+    const entryId = 'j1';
+    vi.spyOn(api, 'jobs').mockResolvedValue([{ ...JOB, status: 'done' }]);
+    vi.spyOn(api, 'storage').mockResolvedValue({
+      used_bytes: 0,
+      limit_bytes: null,
+      free_bytes: 1,
+    });
+    await commands.syncJobs();
+    expect(state().history.map((entry) => entry.id)).toEqual([entryId]);
+    const before = notices();
+    await commands.downloadAgain(entryId);
+    expect(notices()).toBe(before);
+    await commands.downloadAgain(entryId);
+    expect(state().notice).toMatchObject({ message: 'addedAgain' });
+  });
+
   it('shows a localized notice code when the API fails', async () => {
     vi.spyOn(api, 'updateSettings').mockRejectedValue(
       new ApiRequestError(400, 'invalid_option', 'bad', null),
