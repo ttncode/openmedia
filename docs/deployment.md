@@ -1,32 +1,82 @@
 # Deployment
 
-This project distributes container images; it does not deploy them for you.
-One image per application, named after the application's own directory: an
-application in a directory called `web` publishes `…/<project>-web` and runs
-as the `web` service in `compose.yaml`, on its own host port (`WEB_PORT`,
-`API_PORT`, … in `.env`).
+## Topology
+
+`compose.yaml` runs two services. `web` publishes `WEB_PORT` (default 8080)
+on every interface; it is the only port meant to be reached from outside the
+host. `api` publishes `API_PORT` (default 8081) bound to `127.0.0.1` only,
+so the API is never reachable directly, even on a shared host. The web app's
+own server proxies `/api/*` requests to the API at runtime; the browser never
+talks to the API origin.
+
+Downloads, cookies, the generated secret key and runtime settings live in the
+`openmedia-data` named volume, mounted at `/data` in the `api` container.
+
+## Reverse proxy
+
+Put your own TLS-terminating reverse proxy in front of `WEB_PORT`; OpenMedia
+does not choose one for you.
+
+Caddy:
+
+```
+openmedia.example.com {
+  reverse_proxy localhost:8080
+}
+```
+
+nginx:
+
+```nginx
+location / {
+  proxy_pass http://localhost:8080;
+  proxy_set_header X-Forwarded-For $remote_addr;
+  proxy_set_header X-Forwarded-Proto $scheme;
+  proxy_set_header Host $host;
+}
+```
+
+`OPENMEDIA_TRUSTED_PROXY_HOPS` (default `1`) tells the API how many
+`X-Forwarded-*` hops to trust when reading the client's real address, used
+for rate limiting and the cross-site guard. Set it to the number of proxies
+between the browser and the `web` container: `1` for a single reverse proxy
+in front of Compose, `0` if the API is reached directly (no proxy at all),
+higher if you chain more than one proxy. A value too low reads a proxy's own
+address as the client's; a value too high reads a spoofable header as if a
+trusted proxy set it.
+
+## Backups
+
+Back up the `openmedia-data` volume (or whatever host path it is bound to)
+to preserve cookies, the generated secret key and runtime settings across
+reinstalls. Downloaded media files are deleted automatically once their
+retention period elapses, so they are not worth including in a backup
+schedule.
+
+## yt-dlp updates
+
+`OPENMEDIA_AUTO_UPDATE_YTDLP` (default `true`) installs the newest `yt-dlp`
+into the data volume on every container start, ahead of the version locked
+into the image. Set it to `false` to pin the image's bundled version, for
+example on a host with no outbound internet access.
+
+## Publishing
 
 `.github/workflows/build.yml` publishes `main` and `sha-<commit>` tags on
 every push to `main`. `.github/workflows/release.yml` additionally publishes
 semver tags (`1.4.0`, `1.4`) plus `latest` when a release is cut. Both build
-the same images; they differ only in which tags name them. One release covers
-every application, so their versions never drift apart.
-
-Nothing routes between them: put whatever reverse proxy you already terminate
-TLS with in front of the ports, rather than one this project chose for you.
+the same images; they differ only in which tags name them.
 
 `compose.yaml` and `example.env` are attached to every GitHub Release, so a
 deployment target always fetches a matching pair rather than whatever is on
-`main`. `install.sh` downloads both, generates a random database password,
-signs in to the registry when it needs to, starts the stack, and applies the
-schema — safe to re-run: it always overwrites `compose.yaml` with the
-release's own copy, and never touches an existing `.env`.
+`main`. `install.sh` downloads both, starts the stack, and never touches an
+existing `.env`.
 
 ## If this project is private
 
-A private project needs a token, and it needs it for two separate reasons —
+A private project needs a token, and it needs it for two separate reasons:
 a token carrying only one of the two scopes fails in only one of the two
-places:
+places.
 
 ```sh
 GITHUB_TOKEN=ghp_... bash install.sh
@@ -34,16 +84,13 @@ GITHUB_TOKEN=ghp_... bash install.sh
 
 - **`repo`**, to download the release assets. A private release's browser
   download URL returns 404 _even with a token attached_, so `install.sh`
-  fetches assets through the GitHub API instead. Without that, an operator
-  who hits a 404, adds a token, and hits another 404 concludes the token is
-  wrong and looks in the wrong place.
+  fetches assets through the GitHub API instead.
 - **`read:packages`**, to pull the image. A package's visibility on ghcr is
   separate from its repository's, so a private package refuses an anonymous
   pull with `unauthorized` even when the repository is public.
 
-`jq` is required on the host for this path only — `install.sh` uses it to
-read the release's JSON. A public project needs neither the token nor `jq`,
-and behaves exactly as it always has.
+`jq` is required on the host for this path only. A public project needs
+neither the token nor `jq`.
 
 ## Two delivery modes, one pipeline
 
@@ -54,16 +101,3 @@ They differ only in which `IMAGE_TAG` the deployment sets.
 | `IMAGE_TAG`  | `1.4.0`, pinned deliberately | `main`, moving           |
 | Upgrades     | The client chooses when      | Every merge              |
 | `install.sh` | Handed to the client         | Used by the author       |
-
-## Before the first deploy
-
-Nothing, if the GitHub repository is named after this project's directory.
-
-`compose.yaml`'s `app.image`, `install.sh`'s `RepoUrl`, and the image
-`build.yml` and `release.yml` push to were all written at generation time
-from the same owner and project name, so they already agree.
-
-If the repository was renamed, all four need the new name. `install.sh`
-re-downloads `compose.yaml` from the latest release on every run, so change
-it in this repository and cut a release — a hand-edit to a deployed copy is
-undone the next time the script runs.
