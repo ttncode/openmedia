@@ -20,7 +20,7 @@ set -o pipefail
 # Substituted at generation time; assumes the repo is named after the project
 # directory.
 RepoUrl='https://github.com/ttncode/openmedia/releases/latest/download'
-TargetDir='./app'
+TargetDir='./openmedia'
 
 RepoSlug="${RepoUrl#https://github.com/}"
 RepoSlug="${RepoSlug%/releases/latest/download}"

@@ -6,7 +6,7 @@
 # Empty on purpose: scaffold merges in one service per application (ADR-0022)
 # and whichever database and cache were selected (ADR-0019), so a project ships
 # exactly what it asked for rather than a service nothing connects to.
-name: app
+name: openmedia
 services:
   web:
     image: ghcr.io/ttncode/openmedia-web:${IMAGE_TAG:-latest}
