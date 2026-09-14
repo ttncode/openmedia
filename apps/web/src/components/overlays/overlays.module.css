@@ -127,6 +127,8 @@
 }
 
 .hud {
+  position: relative;
+  z-index: 50;
   width: min(calc(100% - 48px), 340px);
   display: grid;
   gap: 14px;
@@ -188,6 +190,8 @@
 }
 
 .alert {
+  position: relative;
+  z-index: 50;
   width: min(calc(100% - 64px), 290px);
   display: grid;
   gap: 4px;
