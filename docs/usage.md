@@ -11,7 +11,10 @@ If a link belongs to a playlist, OpenMedia asks whether to add only that
 video or the whole playlist, up to the server's playlist item limit (see
 [Configuration](/configuration)). A link that is itself a playlist or an
 album, such as an Internet Archive item with several files, adds each of its
-items to the queue.
+items to the queue. This happens even with **Only this video** selected,
+because such a link has no single video to choose. Expansion goes one level
+deep: an item that is itself a playlist shows an error, and you can paste its
+link on its own.
 
 ## Formats and quality
 
