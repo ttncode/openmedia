@@ -12,3 +12,10 @@ coverage/
 
 .DS_Store
 *.swp
+
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+apps/api/data/

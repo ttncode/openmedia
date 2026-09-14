@@ -1,0 +1,263 @@
+.capsule {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 5px 14px;
+  border: 0;
+  border-radius: var(--radius-capsule);
+  background: var(--fill);
+  color: var(--accent-text);
+  font-weight: 600;
+  font-size: 13px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    transform var(--duration-quick) var(--spring-snappy),
+    background-color 0.2s ease,
+    color 0.2s ease,
+    opacity 0.2s ease;
+}
+.capsule:hover {
+  background: var(--fill-strong);
+}
+.capsule:active {
+  transform: scale(0.96);
+}
+.capsule:disabled {
+  opacity: 0.4;
+  cursor: default;
+  transform: none;
+}
+
+.capsule.primary {
+  background: var(--button);
+  color: var(--on-accent);
+}
+.capsule.primary:hover {
+  background: color-mix(in srgb, var(--button) 88%, var(--label));
+}
+.capsule.primary:disabled {
+  background: var(--fill);
+  color: var(--tertiary);
+  opacity: 1;
+}
+.capsule.tinted {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+.capsule.tinted:hover {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+.capsule.plain {
+  background: transparent;
+  padding-inline: 8px;
+}
+.capsule.plain:hover {
+  background: var(--fill-hover);
+}
+.capsule.destructive {
+  background: transparent;
+  color: var(--red-text);
+}
+.capsule.destructive:hover {
+  background: color-mix(in srgb, var(--red) 12%, transparent);
+}
+.capsule.large {
+  min-height: 44px;
+  padding: 10px 22px;
+  font-size: 15px;
+}
+
+@media (max-width: 767px) {
+  .capsule {
+    min-height: 34px;
+  }
+}
+
+.iconButton {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: var(--radius-capsule);
+  background: transparent;
+  color: var(--secondary);
+  cursor: pointer;
+  transition:
+    transform var(--duration-quick) var(--spring-snappy),
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+.iconButton:hover {
+  background: var(--fill-hover);
+  color: var(--label);
+}
+.iconButton:active {
+  transform: scale(0.9);
+}
+.iconButton.small {
+  width: 26px;
+  height: 26px;
+}
+
+@media (max-width: 767px) {
+  .iconButton {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+.brandMark {
+  width: 26px;
+  height: 26px;
+  flex: none;
+}
+.brandFrame {
+  stroke: var(--label);
+}
+.brandWave {
+  stroke: var(--accent);
+  transition: stroke var(--duration-base) var(--ease-out);
+}
+
+.segmented {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(var(--count), minmax(0, 1fr));
+  padding: 2px;
+  border-radius: var(--radius-capsule);
+  background: var(--fill);
+  isolation: isolate;
+}
+.segmentedThumb {
+  position: absolute;
+  z-index: -1;
+  top: 2px;
+  bottom: 2px;
+  left: 2px;
+  width: calc((100% - 4px) / var(--count));
+  border-radius: var(--radius-capsule);
+  background: var(--segment-thumb);
+  box-shadow:
+    0 0 0 0.5px rgb(0 0 0 / 0.04),
+    0 3px 8px rgb(0 0 0 / 0.12),
+    0 3px 1px rgb(0 0 0 / 0.04);
+  transform: translateX(calc(var(--index) * 100%));
+  transition: transform var(--duration-base) var(--spring-snappy);
+}
+.segmented button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 4px 10px;
+  border: 0;
+  border-radius: var(--radius-capsule);
+  background: transparent;
+  color: var(--label);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    transform var(--duration-quick) var(--spring-snappy),
+    opacity 0.2s ease;
+}
+.segmented button[aria-checked="false"] {
+  opacity: 0.72;
+}
+.segmented button:active {
+  transform: scale(0.95);
+}
+
+@media (max-width: 767px) {
+  .segmented button {
+    min-height: 34px;
+    font-size: 14px;
+  }
+}
+
+.switch {
+  position: relative;
+  width: 51px;
+  height: 31px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-capsule);
+  background: var(--fill-strong);
+  cursor: pointer;
+  transition: background-color 0.25s ease;
+}
+.switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  background: #fdfdfd;
+  box-shadow:
+    0 3px 8px rgb(0 0 0 / 0.15),
+    0 3px 1px rgb(0 0 0 / 0.06);
+  transition:
+    transform var(--duration-base) var(--spring-snappy),
+    width 0.2s ease;
+}
+.switch:active::after {
+  width: 32px;
+}
+.switch[aria-checked="true"] {
+  background: var(--green);
+}
+.switch[aria-checked="true"]::after {
+  transform: translateX(20px);
+}
+.switch[aria-checked="true"]:active::after {
+  transform: translateX(15px);
+}
+
+.stepperGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.stepper {
+  display: inline-grid;
+  grid-template-columns: 38px 1px 38px;
+  align-items: center;
+  height: 32px;
+  border-radius: 9px;
+  background: var(--fill);
+  overflow: hidden;
+}
+.stepper button {
+  height: 100%;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  color: var(--label);
+  display: grid;
+  place-items: center;
+}
+.stepper button:active {
+  background: var(--fill-strong);
+}
+.stepper button:disabled {
+  opacity: 0.3;
+}
+.stepperDivider {
+  width: 1px;
+  height: 18px;
+  background: var(--separator);
+}
+.stepperValue {
+  min-width: 18px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  color: var(--label);
+}

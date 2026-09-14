@@ -24,7 +24,12 @@ const SKIP_DIRS = new Set(["node_modules", ".git", ".vitepress"]);
 // markdown path scan only — the ADR-citation scan must still walk apps/, or
 // a dead ADR reference in an adapter's own mise.toml goes unseen again
 // (the hole task 11 closed).
-const MARKDOWN_SKIP_DIRS = new Set([...SKIP_DIRS, "apps"]);
+const MARKDOWN_SKIP_DIRS = new Set([
+  ...SKIP_DIRS,
+  "apps",
+  "superpowers",
+  ".superpowers",
+]);
 
 async function filesMatching(dir, matches, skipDirs = SKIP_DIRS) {
   const entries = await readdir(dir, { withFileTypes: true });

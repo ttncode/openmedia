@@ -20,7 +20,7 @@ set -o pipefail
 # Substituted at generation time; assumes the repo is named after the project
 # directory.
 RepoUrl='https://github.com/ttncode/openmedia/releases/latest/download'
-TargetDir='./app'
+TargetDir='./openmedia'
 
 RepoSlug="${RepoUrl#https://github.com/}"
 RepoSlug="${RepoSlug%/releases/latest/download}"
@@ -235,14 +235,17 @@ main() {
   start_stack || { echo 'could not start the stack; check the output above'; return 1; }
   run_migrations || { echo 'could not run migrations; check the output above'; return 1; }
 
-  # One line per application (ADR-0022), read out of .env so it reflects any
-  # port the operator changed.
-  local name port
-  while IFS='=' read -r name port; do
-    [ -n "$port" ] || continue
-    name="${name%_PORT}"
-    echo "$(printf '%s' "$name" | tr '[:upper:]' '[:lower:]') is running on http://localhost:${port}"
-  done < <(grep -E '^[A-Z][A-Z0-9_]*_PORT=' .env || true)
+  print_access_details
+}
+
+print_access_details() {
+  local web_port password
+  web_port="$(sed -n 's/^WEB_PORT=//p' .env)"
+  password="$(sed -n 's/^OPENMEDIA_PASSWORD=//p' .env)"
+  echo "openmedia is running on http://localhost:${web_port##*:}"
+  if [ -n "$password" ]; then
+    echo "sign in with the password from .env: ${password}"
+  fi
 }
 
 # Sourced by the toolbox's tests to exercise one function at a time.

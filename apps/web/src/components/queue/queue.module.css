@@ -1,0 +1,367 @@
+.view {
+  display: grid;
+  gap: 10px;
+}
+.viewBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-inline: 4px;
+  flex-wrap: wrap;
+}
+.summary {
+  font-size: 13px;
+  color: var(--secondary);
+}
+.viewActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.note {
+  font-size: 12px;
+  color: var(--tertiary);
+}
+.empty {
+  padding: 40px 16px;
+  text-align: center;
+  color: var(--secondary);
+}
+
+.list {
+  display: grid;
+  border-radius: var(--radius-group);
+  background: var(--cell);
+  box-shadow:
+    var(--shadow-soft),
+    inset 0 0 0 0.5px var(--separator);
+  overflow: hidden;
+}
+
+.row {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+  padding: 10px 12px;
+  cursor: pointer;
+  outline: none;
+  transition: background-color 0.18s ease;
+}
+.row + .row::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 96px;
+  right: 0;
+  height: 0.5px;
+  background: var(--separator);
+}
+.row:hover {
+  background: var(--fill-hover);
+}
+.selectable {
+  cursor: default;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding-block: 0;
+  padding-left: 0;
+}
+.rowSelect {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  align-self: stretch;
+  gap: 12px;
+  min-width: 0;
+  padding: 10px 0 10px 12px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  outline: none;
+}
+.row:has([aria-current="true"]) {
+  background: var(--accent-soft);
+}
+.row:has([aria-current="true"])::before,
+.row:has([aria-current="true"]) + .row::before {
+  opacity: 0;
+}
+.row:has(.rowSelect:focus-visible) {
+  box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--accent) 50%, transparent);
+}
+.arriving {
+  animation: arrive 0.62s var(--spring-smooth) both;
+}
+
+.thumb {
+  display: block;
+  position: relative;
+  width: 72px;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-thumb);
+  overflow: hidden;
+  background: var(--fill);
+  box-shadow: var(--shadow-thumb);
+}
+.thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.thumbGlyph {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  color: var(--on-accent);
+  background: var(--button);
+}
+.errorThumb {
+  display: grid;
+  place-items: center;
+  color: var(--red-text);
+  background: color-mix(in srgb, var(--red) 14%, transparent);
+}
+
+.rowText {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+.rowTitle {
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rowLine {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  font-size: 12.5px;
+  color: var(--secondary);
+  white-space: nowrap;
+  overflow: hidden;
+}
+.rowLine > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.errorLine {
+  color: var(--red-text);
+}
+.rowTrailing {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ringButton {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  transition: transform var(--duration-quick) var(--spring-snappy);
+}
+.ringButton:active {
+  transform: scale(0.88);
+}
+.ring {
+  position: absolute;
+  inset: 3px;
+  width: 28px;
+  height: 28px;
+  transform: rotate(-90deg);
+}
+.ring circle {
+  fill: none;
+  stroke-width: 2.6;
+}
+.ringTrack {
+  stroke: var(--fill-strong);
+}
+.ringValue {
+  stroke: var(--accent);
+  stroke-linecap: round;
+  stroke-dasharray: 100;
+  stroke-dashoffset: calc(100 - var(--progress, 0));
+  transition: stroke-dashoffset 0.35s linear;
+}
+.ringStop {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+.waiting .ring {
+  animation: spin 1.1s linear infinite;
+}
+.waiting .ringValue {
+  stroke-dashoffset: 72;
+  stroke: var(--tertiary);
+  transition: none;
+}
+.waiting .ringStop {
+  background: var(--tertiary);
+}
+
+.doneGlyph {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  color: var(--green);
+  animation: pop 0.5s var(--spring-bouncy) both;
+}
+.saveLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 5px 14px;
+  border-radius: var(--radius-capsule);
+  background: var(--fill);
+  color: var(--accent-text);
+  font-weight: 600;
+  font-size: 13px;
+  white-space: nowrap;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 0.2s ease;
+}
+.saveLink:hover {
+  background: var(--fill-strong);
+}
+
+.skeleton {
+  background: inherit;
+}
+.skeletonLine {
+  height: 11px;
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    var(--fill) 25%,
+    var(--fill-hover) 50%,
+    var(--fill) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.3s linear infinite;
+}
+.short {
+  width: 60%;
+}
+
+.artwork {
+  display: block;
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-artwork);
+  overflow: hidden;
+  background: var(--fill);
+  box-shadow:
+    0 2px 4px rgb(0 0 0 / 0.08),
+    0 16px 36px rgb(0 0 0 / 0.16);
+}
+.artwork img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.artworkBadge {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: rgb(20 20 22 / 0.55);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  color: #f5f5f7;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes pop {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.12);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes shimmer {
+  from {
+    background-position: 150% 0;
+  }
+  to {
+    background-position: -50% 0;
+  }
+}
+@keyframes arrive {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.97);
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: blur(0);
+  }
+}
+
+@media (max-width: 767px) {
+  .row {
+    min-height: 68px;
+  }
+  .row:has([aria-current="true"]) {
+    background: transparent;
+  }
+  .row:has([aria-current="true"]) + .row::before {
+    opacity: 1;
+  }
+  .row:active {
+    background: var(--fill);
+  }
+  .rowTitle {
+    font-size: 15px;
+  }
+  .rowLine {
+    font-size: 13px;
+  }
+  .ringButton {
+    width: 44px;
+    height: 44px;
+  }
+  .ring {
+    inset: 8px;
+  }
+}
