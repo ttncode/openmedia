@@ -27,7 +27,7 @@ RUN useradd --create-home --uid 10001 app \
 USER app
 VOLUME ["/data"]
 EXPOSE 8080
-HEALTHCHECK --interval=30s --timeout=3s \
+HEALTHCHECK --interval=30s --timeout=3s --start-period=300s --start-interval=5s \
   CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/health/live')" || exit 1
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD ["gunicorn", "--workers", "1", "--threads", "8", "--timeout", "120", "--bind", "0.0.0.0:8080", "--access-logfile", "-", "app:create_app()"]

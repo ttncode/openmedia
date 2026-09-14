@@ -72,8 +72,16 @@ schedule.
 
 `OPENMEDIA_AUTO_UPDATE_YTDLP` (default `true`) installs the newest `yt-dlp`
 into the data volume on every container start, ahead of the version locked
-into the image. Set it to `false` to pin the image's bundled version, for
-example on a host with no outbound internet access.
+into the image. The install gets 120 seconds and replaces the previous copy
+only when it succeeds. When it fails or times out, the previous copy is
+removed as well, so the image's locked version runs rather than an outdated
+download. Set it to `false` to run the image's bundled version, for example on
+a host with no outbound internet access; that also removes any copy an earlier
+update left in the volume.
+
+The API container reports healthy only once the update and startup have
+finished. Its health check allows 300 seconds for that, probing every 5
+seconds, and the `web` service starts when the API is healthy.
 
 ## Publishing
 

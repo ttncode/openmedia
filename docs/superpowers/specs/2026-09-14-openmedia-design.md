@@ -264,9 +264,14 @@ queued ──slot free──▶ downloading ──post-processing line──▶ 
 - Runtime: `python:3.13-slim` with `ffmpeg` from apt and the `deno` binary copied from
   the pinned `denoland/deno:bin` image; `yt-dlp[default]` and `yt-dlp-ejs` come from
   `uv.lock`.
-- `apps/api/docker-entrypoint.sh` creates the data directories, optionally installs the
-  newest `yt-dlp` and `yt-dlp-ejs` into `/data/yt-dlp` (failure keeps the locked version),
-  then runs gunicorn: `--workers 1 --threads 8 --timeout 120 --bind 0.0.0.0:8080`.
+- `apps/api/docker-entrypoint.sh` creates the data directories. When
+  `OPENMEDIA_AUTO_UPDATE_YTDLP` is true it installs the newest `yt-dlp` and `yt-dlp-ejs`
+  into a temporary directory under `/data` within 120 seconds and swaps it in as
+  `/data/yt-dlp` only on success. A failed update, or the update turned off, removes
+  `/data/yt-dlp` so the locked version runs. It then runs gunicorn:
+  `--workers 1 --threads 8 --timeout 120 --bind 0.0.0.0:8080`.
+- The image health check uses `--start-period=300s --start-interval=5s`, so the web
+  service's `service_healthy` dependency waits through the update.
 - Non-root user `app` (uid 10001) owns `/data`; compose mounts the named volume
   `openmedia-data` there.
 
