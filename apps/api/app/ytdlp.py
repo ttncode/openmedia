@@ -1,5 +1,7 @@
+import contextlib
 import json
 import os
+import signal
 import subprocess
 import sys
 import tempfile
@@ -80,20 +82,24 @@ class DownloadRequest:
 def run_command(
     command: Sequence[str], timeout: float, env: Mapping[str, str]
 ) -> CompletedRun:
-    try:
-        result = subprocess.run(
-            list(command),
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-            env=dict(env),
-            check=False,
-        )
-    except subprocess.TimeoutExpired as error:
-        raise ApiError(
-            504, "timeout", "The site took too long to respond. Try again."
-        ) from error
-    return CompletedRun(result.returncode, result.stdout, result.stderr)
+    with subprocess.Popen(
+        list(command),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        env=dict(env),
+        start_new_session=True,
+    ) as process:
+        try:
+            stdout, stderr = process.communicate(timeout=timeout)
+        except subprocess.TimeoutExpired as error:
+            with contextlib.suppress(ProcessLookupError):
+                os.killpg(process.pid, signal.SIGKILL)
+            process.communicate()
+            raise ApiError(
+                504, "timeout", "The site took too long to respond. Try again."
+            ) from error
+    return CompletedRun(process.returncode, stdout, stderr)
 
 
 def base_command() -> list[str]:

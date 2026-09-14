@@ -204,7 +204,9 @@ when cookies exist and `--proxy` when configured.
 | Metadata        | `--embed-metadata --embed-chapters`, and `--embed-thumbnail` except for WAV                                                                                                                   |
 
 Info extraction uses `-J --no-playlist` (first JSON document) with a 60 second
-timeout. Playlist expansion uses `--flat-playlist -J --playlist-end {limit}`. At most
+timeout. Playlist expansion uses `--flat-playlist -J --playlist-end {limit}` with a 90
+second timeout. Both run in their own session, and a timeout kills the whole process
+group. At most
 4 info or playlist processes run at once; further lookups wait for a free slot, so a
 large playlist cannot take every gunicorn thread.
 

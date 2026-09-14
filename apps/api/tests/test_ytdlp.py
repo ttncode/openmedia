@@ -1,4 +1,5 @@
 import json
+import os
 import threading
 import time
 from collections.abc import Mapping, Sequence
@@ -22,8 +23,11 @@ from app.ytdlp import (
     build_download_command,
     build_info_command,
     error_from_output,
+    run_command,
     summarize_info,
 )
+
+from .test_jobs import wait_until
 
 URL = "https://www.youtube.com/watch?v=abc"
 
@@ -295,12 +299,28 @@ def test_concurrent_lookups_are_capped(settings: Settings) -> None:
     ]
     for caller in callers:
         caller.start()
-    deadline = time.monotonic() + 5
-    while runner.active < MAX_CONCURRENT_LOOKUPS and time.monotonic() < deadline:
-        time.sleep(0.01)
+    assert wait_until(lambda: runner.active == MAX_CONCURRENT_LOOKUPS)
     time.sleep(0.1)
     assert runner.active == MAX_CONCURRENT_LOOKUPS
     runner.release.set()
     for caller in callers:
         caller.join(5)
     assert runner.peak == MAX_CONCURRENT_LOOKUPS
+
+
+def process_is_gone(pid: int) -> bool:
+    try:
+        stat = Path(f"/proc/{pid}/stat").read_text()
+    except FileNotFoundError:
+        return True
+    return stat.rpartition(") ")[2].startswith("Z")
+
+
+def test_timed_out_lookup_kills_the_whole_process_group(tmp_path: Path) -> None:
+    pid_file = tmp_path / "grandchild.pid"
+    script = f'sleep 30 >/dev/null 2>&1 & echo $! > "{pid_file}"; wait'
+    with pytest.raises(ApiError) as caught:
+        run_command(["sh", "-c", script], 0.5, dict(os.environ))
+    assert caught.value.code == "timeout"
+    grandchild = int(pid_file.read_text())
+    assert wait_until(lambda: process_is_gone(grandchild), timeout=2.0)
