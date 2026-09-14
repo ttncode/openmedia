@@ -7,6 +7,7 @@ from flask import Flask
 from app.config import Settings
 from app.errors import ApiError
 from app.security import (
+    MAX_TRACKED_CLIENTS,
     RateLimiter,
     ensure_authenticated,
     ensure_same_origin_request,
@@ -113,3 +114,17 @@ def test_secret_key_is_generated_once(settings: Settings) -> None:
     assert load_or_create_secret_key(generated) == first
     assert load_or_create_secret_key(settings) == "test-secret-key"
     assert stat.S_IMODE(generated.secret_key_file.stat().st_mode) == 0o600
+
+
+def test_rate_limiter_evicts_refilled_buckets_beyond_the_tracking_limit() -> None:
+    clock = FakeClock()
+    limiter = RateLimiter(1, clock)
+    limiter.retry_after("exhausted")
+    clock.now = 30.0
+    for client in range(MAX_TRACKED_CLIENTS):
+        limiter.retry_after(f"client-{client}")
+    clock.now = 90.0
+    limiter.retry_after("newcomer")
+    assert len(limiter._buckets) == 1
+    clock.now = 90.5
+    assert limiter.retry_after("newcomer") is not None

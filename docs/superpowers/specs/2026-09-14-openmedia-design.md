@@ -247,9 +247,12 @@ queued ──slot free──▶ downloading ──post-processing line──▶ 
   and does not match the forwarded host.
 - Password: `OPENMEDIA_PASSWORD` compared with `hmac.compare_digest`; Flask signed
   session cookie, `HttpOnly`, `SameSite=Lax`, `Secure` when the forwarded protocol is
-  https; login attempts limited to 5 per minute per client.
+  https; login attempts limited to 5 per minute per client and 30 per minute across all
+  clients, because the client address comes from a header a direct client can spoof.
 - Rate limit: token bucket per client address (after `ProxyFix`), 429 `rate_limited`
-  with `Retry-After`.
+  with `Retry-After`. Once more than 10,000 addresses are tracked, fully refilled
+  buckets are dropped. Behind a reverse proxy, `WEB_PORT` should be bound to
+  `127.0.0.1` so the address header cannot be set around the proxy.
 - Cookies file: stored with mode 0600, never logged, copied per job so yt-dlp writes do
   not race; content must start with the Netscape header or contain tab-separated rows.
 

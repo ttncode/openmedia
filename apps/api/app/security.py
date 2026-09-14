@@ -19,6 +19,7 @@ SAFE_METHODS = frozenset({"GET", "HEAD", "OPTIONS"})
 CROSS_SITE_FETCH_VALUES = frozenset({"cross-site", "same-site"})
 SECONDS_PER_MINUTE = 60.0
 SECRET_KEY_BYTES = 32
+MAX_TRACKED_CLIENTS = 10_000
 
 
 def load_or_create_secret_key(settings: Settings) -> str:
@@ -43,17 +44,28 @@ class RateLimiter:
         self._buckets: dict[str, tuple[float, float]] = {}
         self._lock = threading.Lock()
 
+    def _tokens_at(self, bucket: tuple[float, float], now: float) -> float:
+        tokens, updated = bucket
+        return min(self._capacity, tokens + (now - updated) * self._refill_per_second)
+
+    def _evict_refilled_buckets(self, now: float) -> None:
+        if len(self._buckets) <= MAX_TRACKED_CLIENTS:
+            return
+        self._buckets = {
+            key: bucket
+            for key, bucket in self._buckets.items()
+            if self._tokens_at(bucket, now) < self._capacity
+        }
+
     def retry_after(self, key: str) -> float | None:
         with self._lock:
             now = self._clock()
-            tokens, updated = self._buckets.get(key, (self._capacity, now))
-            tokens = min(
-                self._capacity, tokens + (now - updated) * self._refill_per_second
-            )
+            tokens = self._tokens_at(self._buckets.get(key, (self._capacity, now)), now)
             if tokens < 1:
                 self._buckets[key] = (tokens, now)
                 return (1 - tokens) / self._refill_per_second
             self._buckets[key] = (tokens - 1, now)
+            self._evict_refilled_buckets(now)
             return None
 
     def enforce(self, key: str) -> None:

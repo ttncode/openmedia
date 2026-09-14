@@ -13,7 +13,7 @@ it is reachable from the internet, and keep the image up to date.
 Set `OPENMEDIA_PASSWORD` to require sign-in for every route except the
 session check and health checks. The password is compared with a
 constant-time comparison, sign-in attempts are limited to 5 per minute per
-client, and the session is a signed cookie, `HttpOnly`, `SameSite=Lax`, and
+client address and 30 per minute across all clients, and the session is a signed cookie, `HttpOnly`, `SameSite=Lax`, and
 marked `Secure` whenever the request arrives over https (through the
 `X-Forwarded-Proto` header behind a reverse proxy).
 
@@ -28,11 +28,24 @@ from making download requests through a visitor's browser session.
 
 ## Rate limiting
 
-Each client address (read from `X-Forwarded-For` up to
-`OPENMEDIA_TRUSTED_PROXY_HOPS` hops, see [Deployment](/deployment)) gets a
-token bucket of `OPENMEDIA_RATE_LIMIT_PER_MINUTE` requests per minute for
-info, playlist and download requests. Exceeding it returns 429 with a
-`Retry-After` header.
+Each client address gets a token bucket of `OPENMEDIA_RATE_LIMIT_PER_MINUTE`
+requests per minute for info, playlist and download requests. Exceeding it,
+or the sign-in limits above, returns 429 with a `Retry-After` header.
+
+The API reads the client address from `X-Forwarded-For` (see
+[Deployment](/deployment)). The `web` container passes that header on
+unchanged when a request already carries one, so a client that connects to
+`WEB_PORT` directly can write any address into it and get a fresh bucket for
+every request. Per-client limits only hold when a reverse proxy you control
+sets the header and `WEB_PORT` cannot be reached around it; bind `WEB_PORT`
+to `127.0.0.1` in that setup.
+
+Two protections do not depend on the header. Sign-in attempts are capped at
+30 per minute across all clients, so rotating addresses cannot guess a
+password faster than that; the cost is that during such an attack everyone
+else's sign-in is slowed too. And once more than 10,000 client addresses are
+tracked, buckets that have fully refilled are dropped, so rotating addresses
+cannot grow memory without bound.
 
 ## Network guard
 

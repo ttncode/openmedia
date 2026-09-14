@@ -9,7 +9,11 @@ from flask.testing import FlaskClient
 
 from app import create_app
 from app.config import Settings
-from app.services import Services, build_services
+from app.services import (
+    LOGIN_ATTEMPTS_PER_MINUTE_ALL_CLIENTS,
+    Services,
+    build_services,
+)
 from app.storage import StorageUsage
 from app.ytdlp import CompletedRun
 
@@ -231,3 +235,20 @@ def test_unknown_route_is_json(client: FlaskClient) -> None:
     response = client.get("/api/nope")
     assert response.status_code == 404
     assert response.get_json()["code"] == "not_found"
+
+
+def test_sign_in_attempts_are_limited_across_rotating_client_addresses(
+    open_settings: Settings,
+) -> None:
+    app, _ = build(replace(open_settings, password="hunter2"))
+    client = app.test_client()
+    statuses = [
+        client.post(
+            "/api/session",
+            json={"password": "nope"},
+            headers={"X-Forwarded-For": f"203.0.113.{attempt}"},
+        ).status_code
+        for attempt in range(LOGIN_ATTEMPTS_PER_MINUTE_ALL_CLIENTS + 1)
+    ]
+    assert set(statuses[:-1]) == {401}
+    assert statuses[-1] == 429

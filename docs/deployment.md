@@ -36,6 +36,17 @@ location / {
 }
 ```
 
+With a reverse proxy in front, bind `WEB_PORT` to the loopback interface in
+`.env`, so clients can only reach the `web` container through the proxy:
+
+```sh
+WEB_PORT=127.0.0.1:8080
+```
+
+Otherwise a client connecting to port 8080 directly can send its own
+`X-Forwarded-For` header and choose the address the per-client rate limits
+see. [Security](/security#rate-limiting) explains which limits still hold.
+
 `OPENMEDIA_TRUSTED_PROXY_HOPS` (default `1`) tells the API how many
 `X-Forwarded-*` hops to trust when reading the client's real address, used
 for rate limiting and the cross-site guard. Set it to the number of proxies

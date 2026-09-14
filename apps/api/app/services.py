@@ -11,7 +11,9 @@ from .settings_store import RuntimeSettings, SettingsStore
 from .ytdlp import Runner, YtDlpClient, run_command
 
 EXTENSION_KEY = "openmedia"
+ALL_CLIENTS_KEY = "all-clients"
 LOGIN_ATTEMPTS_PER_MINUTE = 5
+LOGIN_ATTEMPTS_PER_MINUTE_ALL_CLIENTS = 30
 
 
 @dataclass(frozen=True)
@@ -23,6 +25,7 @@ class Services:
     jobs: JobManager
     request_limiter: RateLimiter
     login_limiter: RateLimiter
+    global_login_limiter: RateLimiter
 
 
 def build_services(
@@ -50,6 +53,7 @@ def build_services(
         jobs=JobManager(runtime),
         request_limiter=RateLimiter(settings.rate_limit_per_minute),
         login_limiter=RateLimiter(LOGIN_ATTEMPTS_PER_MINUTE),
+        global_login_limiter=RateLimiter(LOGIN_ATTEMPTS_PER_MINUTE_ALL_CLIENTS),
     )
 
 

@@ -14,7 +14,7 @@ from .security import (
     sign_in,
     sign_out,
 )
-from .services import current_services
+from .services import ALL_CLIENTS_KEY, current_services
 from .storage import ensure_capacity, storage_usage
 from .validation import parse_download_options, validate_url
 
@@ -70,6 +70,7 @@ def session_status() -> Response:
 def create_session() -> tuple[str, int]:
     services = current_services()
     services.login_limiter.enforce(client_address())
+    services.global_login_limiter.enforce(ALL_CLIENTS_KEY)
     if services.settings.password and not password_matches(
         services.settings, json_payload().get("password")
     ):
