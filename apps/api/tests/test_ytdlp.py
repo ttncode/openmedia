@@ -1,4 +1,6 @@
 import json
+import threading
+import time
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 
@@ -13,6 +15,7 @@ from app.validation import (
     parse_download_options,
 )
 from app.ytdlp import (
+    MAX_CONCURRENT_LOOKUPS,
     CompletedRun,
     DownloadRequest,
     YtDlpClient,
@@ -258,3 +261,42 @@ def test_fetch_playlist_limits_entries(settings: Settings) -> None:
         "urls": [f"https://www.youtube.com/watch?v={n}" for n in range(3)],
     }
     assert runner.commands[0][runner.commands[0].index("--playlist-end") + 1] == "3"
+
+
+class BlockingRunner:
+    def __init__(self) -> None:
+        self.release = threading.Event()
+        self.active = 0
+        self.peak = 0
+        self._lock = threading.Lock()
+
+    def __call__(
+        self, command: Sequence[str], timeout: float, env: Mapping[str, str]
+    ) -> CompletedRun:
+        with self._lock:
+            self.active += 1
+            self.peak = max(self.peak, self.active)
+        self.release.wait(5)
+        with self._lock:
+            self.active -= 1
+        return CompletedRun(0, json.dumps({"title": "Pho"}), "")
+
+
+def test_concurrent_lookups_are_capped(settings: Settings) -> None:
+    runner = BlockingRunner()
+    client = YtDlpClient(settings, no_cookies, runner)
+    callers = [
+        threading.Thread(target=client.fetch_info, args=(URL,))
+        for _ in range(MAX_CONCURRENT_LOOKUPS + 2)
+    ]
+    for caller in callers:
+        caller.start()
+    deadline = time.monotonic() + 5
+    while runner.active < MAX_CONCURRENT_LOOKUPS and time.monotonic() < deadline:
+        time.sleep(0.01)
+    time.sleep(0.1)
+    assert runner.active == MAX_CONCURRENT_LOOKUPS
+    runner.release.set()
+    for caller in callers:
+        caller.join(5)
+    assert runner.peak == MAX_CONCURRENT_LOOKUPS

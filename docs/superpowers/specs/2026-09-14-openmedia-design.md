@@ -204,7 +204,9 @@ when cookies exist and `--proxy` when configured.
 | Metadata        | `--embed-metadata --embed-chapters`, and `--embed-thumbnail` except for WAV                                                                                                                   |
 
 Info extraction uses `-J --no-playlist` (first JSON document) with a 60 second
-timeout. Playlist expansion uses `--flat-playlist -J --playlist-end {limit}`.
+timeout. Playlist expansion uses `--flat-playlist -J --playlist-end {limit}`. At most
+4 info or playlist processes run at once; further lookups wait for a free slot, so a
+large playlist cannot take every gunicorn thread.
 
 Error mapping from the last stderr line: "Sign in to confirm" becomes `bot_check`,
 "Private video" `private_video`, "not available in your country" `geo_blocked`,

@@ -3,6 +3,7 @@ import os
 import subprocess
 import sys
 import tempfile
+import threading
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -20,6 +21,7 @@ PROGRESS_TEMPLATE = (
 MEDIA_OUTPUT_TEMPLATE = "media.%(ext)s"
 INFO_TIMEOUT_SECONDS = 60.0
 PLAYLIST_TIMEOUT_SECONDS = 90.0
+MAX_CONCURRENT_LOOKUPS = 4
 MAX_ERROR_MESSAGE_LENGTH = 300
 CONVERSION_FAILED_MESSAGE = (
     "The file could not be converted to the chosen format. Try MKV instead."
@@ -321,11 +323,15 @@ class YtDlpClient:
         self._settings = settings
         self._copy_cookies = copy_cookies
         self._runner = runner
+        self._lookup_slots = threading.BoundedSemaphore(MAX_CONCURRENT_LOOKUPS)
 
     def _run(
         self, build: Callable[[Path | None], list[str]], timeout: float
     ) -> dict[str, Any]:
-        with tempfile.TemporaryDirectory(prefix="openmedia-") as workdir:
+        with (
+            self._lookup_slots,
+            tempfile.TemporaryDirectory(prefix="openmedia-") as workdir,
+        ):
             command = build(self._copy_cookies(Path(workdir)))
             result = self._runner(command, timeout, ytdlp_environment(self._settings))
         if result.returncode != 0:
