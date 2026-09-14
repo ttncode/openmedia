@@ -80,7 +80,7 @@ function draftFromJob(job: Job): DraftOptions {
   };
 }
 
-function jobLabel(job: Job): string {
+export function jobLabel(job: Job): string {
   const { options } = job;
   if (options.kind === 'audio')
     return (options.audio_format ?? 'mp3').toUpperCase();
