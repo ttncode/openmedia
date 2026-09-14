@@ -105,6 +105,29 @@ export function TrimEditor({
     commit(setEdge(range, edge, seconds, duration));
   };
 
+  const timeField = (edge: TrimEdge): ReactNode => (
+    <label
+      className={`${styles.timeField} ${edge === "end" ? styles.timeFieldEnd : ""}`}
+    >
+      {edge === "start" ? t.inspector.trimStart : t.inspector.trimEnd}
+      <input
+        inputMode="numeric"
+        autoComplete="off"
+        value={draft[edge] ?? formatClock(range[edge])}
+        onChange={(event) =>
+          setDraft((current) => ({
+            ...current,
+            [edge]: event.target.value,
+          }))
+        }
+        onBlur={() => commitTyped(edge)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") commitTyped(edge);
+        }}
+      />
+    </label>
+  );
+
   const startPercent = (range.start / duration) * 100;
   const endPercent = (range.end / duration) * 100;
   const filmstrip = thumbnail
@@ -162,33 +185,12 @@ export function TrimEditor({
         ))}
       </div>
       <div className={styles.trimTimes}>
-        {(["start", "end"] as const).map((edge) => (
-          <label
-            key={edge}
-            className={`${styles.timeField} ${edge === "end" ? styles.timeFieldEnd : ""}`}
-          >
-            {edge === "start" ? t.inspector.trimStart : t.inspector.trimEnd}
-            <input
-              inputMode="numeric"
-              autoComplete="off"
-              value={draft[edge] ?? formatClock(range[edge])}
-              onChange={(event) =>
-                setDraft((current) => ({
-                  ...current,
-                  [edge]: event.target.value,
-                }))
-              }
-              onBlur={() => commitTyped(edge)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") commitTyped(edge);
-              }}
-            />
-          </label>
-        ))}
+        {timeField("start")}
+        <p className={styles.trimLength}>
+          {t.inspector.trimLength(formatClock(range.end - range.start))}
+        </p>
+        {timeField("end")}
       </div>
-      <p className={styles.trimLength}>
-        {t.inspector.trimLength(formatClock(range.end - range.start))}
-      </p>
     </div>
   );
 }

@@ -26,6 +26,22 @@ describe("TrimEditor", () => {
     expect(onChange).toHaveBeenLastCalledWith({ start: 0, end: 60 });
   });
 
+  it("shows the selected length between the start and end fields", () => {
+    render(
+      <TrimEditor
+        duration={120}
+        value={{ start: 5, end: 12 }}
+        onChange={vi.fn()}
+        thumbnail=""
+      />,
+    );
+    const length = screen.getByText("Length 0:07");
+    const row = length.parentElement;
+    expect(row?.children).toHaveLength(3);
+    expect(row?.children[1]).toBe(length);
+    expect(row?.children[2]).toContainElement(screen.getByLabelText("End"));
+  });
+
   it("reports a full range as no trim", async () => {
     const onChange = vi.fn();
     render(
