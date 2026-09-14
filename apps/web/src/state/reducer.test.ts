@@ -154,6 +154,41 @@ describe('reducer', () => {
     expect(again.history).toHaveLength(1);
   });
 
+  it('keeps history empty after clearing while done jobs stay on the server', () => {
+    const doneJob = job({
+      status: 'done',
+      finished_at: '2026-09-14T08:05:00Z',
+    });
+    const started = reducer(withReadyItem(), {
+      type: 'download/started',
+      itemId: 'r1',
+      job: job(),
+      linkedAt: 0,
+    });
+    const done = reducer(started, {
+      type: 'jobs/synced',
+      jobs: [doneJob],
+      requestedAt: 0,
+    });
+    expect(done.history).toHaveLength(1);
+    const cleared = reducer(done, { type: 'history/cleared' });
+    const polled = reducer(cleared, {
+      type: 'jobs/synced',
+      jobs: [doneJob],
+      requestedAt: 1,
+    });
+    expect(polled.history).toEqual([]);
+  });
+
+  it('records a done job it had not seen before', () => {
+    const adopted = reducer(initialState(), {
+      type: 'jobs/synced',
+      jobs: [job({ job_id: 'remote', status: 'done' })],
+      requestedAt: 0,
+    });
+    expect(adopted.history.map((entry) => entry.id)).toEqual(['remote']);
+  });
+
   it('adopts server jobs it did not start and drops jobs the server forgot', () => {
     const adopted = reducer(initialState(), {
       type: 'jobs/synced',

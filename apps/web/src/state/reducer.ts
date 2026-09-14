@@ -152,6 +152,7 @@ function syncJobs(
   const newlyDone = liveJobs.filter(
     (job) =>
       job.status === 'done' &&
+      existingJobs.get(job.job_id)?.job.status !== 'done' &&
       !state.history.some((entry) => entry.id === job.job_id),
   );
   const history = [...newlyDone.map(historyEntry), ...state.history].slice(
