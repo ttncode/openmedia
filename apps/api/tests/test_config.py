@@ -43,3 +43,18 @@ def test_trusted_proxy_hops_must_count_the_web_proxy(
     monkeypatch.setenv("OPENMEDIA_TRUSTED_PROXY_HOPS", "0")
     with pytest.raises(ValueError, match="OPENMEDIA_TRUSTED_PROXY_HOPS"):
         load_settings()
+
+
+def test_placeholder_password_is_refused(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("OPENMEDIA_PASSWORD", "changeme")
+    with pytest.raises(ValueError) as caught:
+        load_settings()
+    assert str(caught.value) == (
+        "OPENMEDIA_PASSWORD is still the placeholder changeme; set a password, "
+        "or leave it empty only for a private local instance"
+    )
+
+
+def test_empty_password_turns_sign_in_off(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("OPENMEDIA_PASSWORD", "")
+    assert load_settings().password == ""

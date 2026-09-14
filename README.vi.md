@@ -38,10 +38,18 @@
 ### Docker Compose
 
 Tải `compose.yaml` và `example.env` từ
-[bản phát hành mới nhất](https://github.com/ttncode/openmedia/releases/latest), sau đó:
+[bản phát hành mới nhất](https://github.com/ttncode/openmedia/releases/latest), sau đó
+sao chép tệp cấu hình mẫu:
 
 ```bash
 cp example.env .env
+```
+
+Sửa `.env` và đặt `OPENMEDIA_PASSWORD` thành mật khẩu của riêng bạn. API sẽ
+không khởi động khi giá trị vẫn là `changeme`; chỉ để trống khi chạy riêng trên
+máy hoặc mạng cục bộ của bạn. Sau đó khởi động:
+
+```bash
 docker compose up -d
 ```
 
@@ -52,6 +60,9 @@ Mở `http://localhost:8080`.
 ```bash
 curl -fsSL https://github.com/ttncode/openmedia/releases/latest/download/install.sh | bash
 ```
+
+Script tạo một mật khẩu ngẫu nhiên và in mật khẩu cùng địa chỉ truy cập khi
+hoàn tất.
 
 ### Từ mã nguồn
 

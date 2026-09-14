@@ -92,7 +92,7 @@ browser ──HTTPS──▶ web (Next.js standalone, :8080)
 | Variable                          | Default   | Meaning                                                             |
 | --------------------------------- | --------- | ------------------------------------------------------------------- |
 | `OPENMEDIA_DATA_DIR`              | `/data`   | Root for downloads, cookies, settings, secret key, yt-dlp updates   |
-| `OPENMEDIA_PASSWORD`              | empty     | When set, every API route except session and health needs a login   |
+| `OPENMEDIA_PASSWORD`              | empty     | Sign-in password; `changeme` refused at startup; empty turns it off |
 | `OPENMEDIA_SECRET_KEY`            | generated | Session signing key; generated once into the data dir when empty    |
 | `OPENMEDIA_RETENTION_MINUTES`     | `60`      | Default retention; runtime setting overrides it                     |
 | `OPENMEDIA_MAX_CONCURRENT`        | `3`       | Default concurrent downloads (1 to 5); runtime setting overrides it |
@@ -251,6 +251,10 @@ queued ──slot free──▶ downloading ──post-processing line──▶ 
   session cookie, `HttpOnly`, `SameSite=Lax`, `Secure` when the forwarded protocol is
   https; login attempts limited to 5 per minute per client and 30 per minute across all
   clients, because the client address comes from a header a direct client can spoof.
+  `example.env` ships `OPENMEDIA_PASSWORD=changeme`; `install.sh` replaces it with a
+  random password and prints it, and the API refuses to start while the password is
+  `changeme`. An empty password stays an explicit opt-out for private local instances,
+  because without a password DNS rebinding lets any web page drive the API.
 - Rate limit: token bucket per client address (after `ProxyFix`), 429 `rate_limited`
   with `Retry-After`. Once more than 10,000 addresses are tracked, fully refilled
   buckets are dropped. Behind a reverse proxy, `WEB_PORT` should be bound to

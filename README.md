@@ -38,10 +38,18 @@
 ### Docker Compose
 
 Download `compose.yaml` and `example.env` from the
-[latest release](https://github.com/ttncode/openmedia/releases/latest), then:
+[latest release](https://github.com/ttncode/openmedia/releases/latest), then
+copy the example settings:
 
 ```bash
 cp example.env .env
+```
+
+Edit `.env` and set `OPENMEDIA_PASSWORD` to a password of your own. The API
+refuses to start while it is still `changeme`; leave it empty only for a
+private local instance. Then start the stack:
+
+```bash
 docker compose up -d
 ```
 
@@ -52,6 +60,9 @@ Open `http://localhost:8080`.
 ```bash
 curl -fsSL https://github.com/ttncode/openmedia/releases/latest/download/install.sh | bash
 ```
+
+The installer generates a random password and prints it with the address when
+it finishes.
 
 ### From source
 

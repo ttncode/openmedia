@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 TRUE_VALUES = frozenset({"1", "true", "yes", "on"})
+PASSWORD_PLACEHOLDER = "changeme"
 
 
 def _text(name: str, default: str) -> str:
@@ -25,6 +26,16 @@ def _integer(name: str, default: int, minimum: int, maximum: int) -> int:
     if not minimum <= value <= maximum:
         raise ValueError(f"{name} must be between {minimum} and {maximum}, got {value}")
     return value
+
+
+def _password() -> str:
+    password = os.environ.get("OPENMEDIA_PASSWORD", "")
+    if password == PASSWORD_PLACEHOLDER:
+        raise ValueError(
+            f"OPENMEDIA_PASSWORD is still the placeholder {PASSWORD_PLACEHOLDER}; "
+            "set a password, or leave it empty only for a private local instance"
+        )
+    return password
 
 
 @dataclass(frozen=True)
@@ -67,7 +78,7 @@ class Settings:
 def load_settings() -> Settings:
     return Settings(
         data_dir=Path(_text("OPENMEDIA_DATA_DIR", "/data")),
-        password=os.environ.get("OPENMEDIA_PASSWORD", ""),
+        password=_password(),
         secret_key=_text("OPENMEDIA_SECRET_KEY", ""),
         retention_minutes=_integer("OPENMEDIA_RETENTION_MINUTES", 60, 1, 10080),
         max_concurrent=_integer("OPENMEDIA_MAX_CONCURRENT", 3, 1, 5),

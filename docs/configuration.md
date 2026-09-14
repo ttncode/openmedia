@@ -26,7 +26,7 @@ matters when running `apps/web` from source against a separately running API.
 | Variable                          | Default   | Meaning                                                                 |
 | --------------------------------- | --------- | ----------------------------------------------------------------------- |
 | `OPENMEDIA_DATA_DIR`              | `/data`   | Root for downloads, cookies, settings, secret key, yt-dlp updates       |
-| `OPENMEDIA_PASSWORD`              | empty     | When set, every API route except session and health needs a login       |
+| `OPENMEDIA_PASSWORD`              | empty     | Sign-in password; `changeme` refused at startup; empty turns it off     |
 | `OPENMEDIA_SECRET_KEY`            | generated | Session signing key; generated once into the data dir when empty        |
 | `OPENMEDIA_RETENTION_MINUTES`     | `60`      | Default retention; the runtime setting below overrides it               |
 | `OPENMEDIA_MAX_CONCURRENT`        | `3`       | Default concurrent downloads (1 to 5); the runtime setting overrides it |
@@ -40,8 +40,13 @@ matters when running `apps/web` from source against a separately running API.
 | `OPENMEDIA_AUTO_UPDATE_YTDLP`     | `true`    | Container start installs the newest yt-dlp into the data dir            |
 | `OPENMEDIA_YTDLP_PROXY`           | empty     | Optional proxy passed to yt-dlp                                         |
 
-Set `OPENMEDIA_PASSWORD` before exposing an instance beyond your own network.
-See [Security](/security) for what it protects and what it does not.
+`example.env` ships `OPENMEDIA_PASSWORD=changeme`. `install.sh` replaces it
+with a random password; when you copy the file by hand, set your own, because
+the API refuses to start while the password is still `changeme`. With a
+password set, every API route except the session and health checks needs a
+sign-in. An empty password turns sign-in off, which is only safe for a private
+local instance. See [Security](/security) for what it protects and what it
+does not.
 
 ## Runtime settings
 

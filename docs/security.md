@@ -5,8 +5,8 @@
 OpenMedia is designed to be run by one person or team for their own use.
 Exposing it publicly means anyone who reaches the web origin can submit
 download requests, unless a password is set. Treat it like any other
-self-hosted tool: put it behind a reverse proxy with TLS, set a password if
-it is reachable from the internet, and keep the image up to date.
+self-hosted tool: put it behind a reverse proxy with TLS, keep a password set,
+and keep the image up to date.
 
 ## Password
 
@@ -16,6 +16,24 @@ constant-time comparison, sign-in attempts are limited to 5 per minute per
 client address and 30 per minute across all clients, and the session is a signed cookie, `HttpOnly`, `SameSite=Lax`, and
 marked `Secure` whenever the request arrives over https (through the
 `X-Forwarded-Proto` header behind a reverse proxy).
+
+`example.env` ships `OPENMEDIA_PASSWORD=changeme`, `install.sh` replaces it
+with a random password, and the API refuses to start while the password is
+still `changeme`. An empty password turns sign-in off. Only do that for a
+private local instance, and read the next section first.
+
+## DNS rebinding
+
+A password is also what stops DNS rebinding. A web page on another site can
+switch its own domain name to your instance's address after the page has
+loaded. From then on the browser treats requests to your instance as coming
+from that page's own origin, so the cross-site request guard below cannot tell
+them apart from the web UI's own requests. This reaches instances that are
+only on your local network or on `localhost`, because the visitor's browser
+makes the requests. Without a password such a page can start downloads, read
+the queue and change settings. With a password it cannot: the browser holds no
+session cookie for the attacker's domain, and the page does not know the
+password.
 
 ## Cross-site request guard
 
