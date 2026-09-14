@@ -222,6 +222,8 @@ export const vi: Messages = {
     invalid_password: 'Mật khẩu không đúng.',
     cross_site_request: 'Yêu cầu bị chặn vì đến từ một trang web khác.',
     storage_full: 'Dung lượng máy chủ đã đầy. Hãy xóa bớt các mục đã tải xong.',
+    request_entity_too_large:
+      'Yêu cầu quá lớn so với giới hạn của máy chủ này.',
     too_large: 'File lớn hơn giới hạn cho phép của máy chủ này.',
     bot_check:
       'Trang này yêu cầu xác minh bạn không phải bot. Hãy thêm cookies trong Cài đặt.',

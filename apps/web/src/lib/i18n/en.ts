@@ -229,6 +229,7 @@ export const en = {
     cross_site_request:
       'The request was blocked because it came from another website.',
     storage_full: 'Server storage is full. Remove finished downloads first.',
+    request_entity_too_large: 'The request is too large for this server.',
     too_large: 'The file is larger than this server allows.',
     bot_check:
       'The site asked to confirm you are not a bot. Add cookies in Settings.',
