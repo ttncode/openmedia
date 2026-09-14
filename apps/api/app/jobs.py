@@ -30,7 +30,10 @@ from .ytdlp import (
 
 OUTPUT_TAIL_LINES = 40
 MAX_TITLE_LENGTH = 100
-TITLE_UNSAFE_CHARACTERS = frozenset('\\/:*?"<>|')
+FIRST_PRINTABLE_CODE = 0x20
+DELETE_CODE = 0x7F
+CONTROL_CHARACTERS = frozenset(map(chr, [*range(FIRST_PRINTABLE_CODE), DELETE_CODE]))
+TITLE_UNSAFE_CHARACTERS = frozenset('\\/:*?"<>|') | CONTROL_CHARACTERS
 SUBTITLE_SUFFIXES = frozenset({".srt", ".vtt", ".ass", ".lrc"})
 PARTIAL_SUFFIXES = frozenset({".part", ".ytdl", ".temp"})
 WATCHDOG_INTERVAL_SECONDS = 1.0

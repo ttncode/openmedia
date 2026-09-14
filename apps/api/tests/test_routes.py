@@ -147,6 +147,20 @@ def test_reclip_download_flow(open_settings: Settings) -> None:
     assert client.get(f"/api/file/{job_id}/5").get_json()["code"] == "not_found"
 
 
+def test_control_characters_never_reach_the_download_header(
+    open_settings: Settings,
+) -> None:
+    app, services = build(open_settings)
+    client = app.test_client()
+    job_id = client.post(
+        "/api/download", json={"url": URL, "title": "Pho\r\nbo\x00\x1f\x7f"}
+    ).get_json()["job_id"]
+    assert services.jobs.wait_until_idle(5)
+    response = client.get(f"/api/file/{job_id}")
+    assert response.status_code == 200
+    assert "Phobo.mp4" in response.headers["Content-Disposition"]
+
+
 def test_file_not_ready_while_downloading(open_settings: Settings) -> None:
     script = ProcessScript([], {"media.mp4": 1}, hold=True)
     app, services = build(open_settings, script=script)

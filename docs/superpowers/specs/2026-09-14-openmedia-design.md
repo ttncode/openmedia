@@ -231,7 +231,8 @@ queued ──slot free──▶ downloading ──post-processing line──▶ 
 - Cancel terminates the process group, removes the job directory and marks `cancelled`.
 - Stall: no output line for `OPENMEDIA_STALL_TIMEOUT_SECONDS` stops the job with `timeout`.
 - On success the media file is the largest non-subtitle file; the download name is the
-  sanitized title (100 characters, reclip's rule) plus extension; subtitle files are
+  sanitized title (100 characters, reclip's rule, control characters removed) plus
+  extension; subtitle files are
   listed after it.
 - Retention: the sweeper runs every 60 seconds and removes finished, failed and
   cancelled jobs older than the retention period, including their files.
