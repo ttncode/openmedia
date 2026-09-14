@@ -1,5 +1,19 @@
 import { describe, expect, it, vi } from 'vitest';
-import { buildUpstreamUrl, forwardedRequestHeaders, proxyToApi } from './proxy';
+import {
+  buildUpstreamUrl,
+  forwardedRequestHeaders,
+  MAX_REQUEST_BYTES,
+  proxyToApi,
+} from './proxy';
+
+function streamOf(size: number): ReadableStream<Uint8Array> {
+  return new ReadableStream({
+    start(controller) {
+      controller.enqueue(new Uint8Array(size));
+      controller.close();
+    },
+  });
+}
 
 describe('api proxy', () => {
   it('maps the path and query onto the API base url', () => {
@@ -71,5 +85,78 @@ describe('api proxy', () => {
       error: 'The OpenMedia API is not reachable.',
       code: 'api_unreachable',
     });
+  });
+
+  it('rejects a declared body larger than the API accepts without calling it', async () => {
+    const fetchImpl = vi.fn();
+    const response = await proxyToApi(
+      new Request('http://localhost/api/cookies', {
+        method: 'PUT',
+        headers: { 'content-length': String(MAX_REQUEST_BYTES + 1) },
+        body: 'x',
+      }),
+      ['cookies'],
+      'http://api:8080',
+      fetchImpl,
+    );
+    expect(response.status).toBe(413);
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it('rejects an undeclared body once it grows past the limit', async () => {
+    const fetchImpl = vi.fn();
+    const response = await proxyToApi(
+      new Request('http://localhost/api/cookies', {
+        method: 'PUT',
+        body: streamOf(MAX_REQUEST_BYTES + 1),
+        duplex: 'half',
+      } as RequestInit),
+      ['cookies'],
+      'http://api:8080',
+      fetchImpl,
+    );
+    expect(response.status).toBe(413);
+    expect(await response.json()).toMatchObject({
+      code: 'request_entity_too_large',
+    });
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it('forwards a body within the limit and the abort signal', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(null));
+    const request = new Request('http://localhost/api/info', {
+      method: 'POST',
+      body: streamOf(MAX_REQUEST_BYTES),
+      duplex: 'half',
+    } as RequestInit);
+    await proxyToApi(request, ['info'], 'http://api:8080', fetchImpl);
+    const init = fetchImpl.mock.calls[0][1];
+    expect(new Blob([init.body]).size).toBe(MAX_REQUEST_BYTES);
+    expect(init.signal).toBe(request.signal);
+  });
+
+  it('keeps the upstream content length only for unencoded bodies', async () => {
+    const plain = await proxyToApi(
+      new Request('http://localhost/api/file/j'),
+      ['file', 'j'],
+      'http://api:8080',
+      vi
+        .fn()
+        .mockResolvedValue(
+          new Response('abc', { headers: { 'content-length': '3' } }),
+        ),
+    );
+    expect(plain.headers.get('content-length')).toBe('3');
+    const encoded = await proxyToApi(
+      new Request('http://localhost/api/file/j'),
+      ['file', 'j'],
+      'http://api:8080',
+      vi.fn().mockResolvedValue(
+        new Response('abc', {
+          headers: { 'content-length': '3', 'content-encoding': 'gzip' },
+        }),
+      ),
+    );
+    expect(encoded.headers.get('content-length')).toBeNull();
   });
 });

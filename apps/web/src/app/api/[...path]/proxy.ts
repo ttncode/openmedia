@@ -10,6 +10,7 @@ const HOP_BY_HOP_HEADERS = new Set([
   'content-length',
 ]);
 const METHODS_WITHOUT_BODY = new Set(['GET', 'HEAD']);
+export const MAX_REQUEST_BYTES = 2 * 1024 * 1024;
 
 export function buildUpstreamUrl(
   requestUrl: string,
@@ -48,7 +49,45 @@ function responseHeaders(upstream: Response): Headers {
   upstream.headers
     .getSetCookie()
     .forEach((cookie) => headers.append('set-cookie', cookie));
+  const contentLength = upstream.headers.get('content-length');
+  if (contentLength !== null && !upstream.headers.has('content-encoding'))
+    headers.set('content-length', contentLength);
   return headers;
+}
+
+function declaresOversizedBody(request: Request): boolean {
+  return Number(request.headers.get('content-length')) > MAX_REQUEST_BYTES;
+}
+
+async function readLimitedBody(
+  body: ReadableStream<Uint8Array>,
+): Promise<Blob | null> {
+  const reader = body.getReader();
+  const chunks: Uint8Array<ArrayBuffer>[] = [];
+  let received = 0;
+  for (
+    let chunk = await reader.read();
+    !chunk.done;
+    chunk = await reader.read()
+  ) {
+    received += chunk.value.byteLength;
+    if (received > MAX_REQUEST_BYTES) {
+      await reader.cancel();
+      return null;
+    }
+    chunks.push(new Uint8Array(chunk.value));
+  }
+  return new Blob(chunks);
+}
+
+function payloadTooLarge(): Response {
+  return Response.json(
+    {
+      error: 'The request is larger than the API accepts.',
+      code: 'request_entity_too_large',
+    },
+    { status: 413 },
+  );
 }
 
 export async function proxyToApi(
@@ -57,9 +96,12 @@ export async function proxyToApi(
   apiBaseUrl: string,
   fetchImpl: typeof fetch = fetch,
 ): Promise<Response> {
-  const body = METHODS_WITHOUT_BODY.has(request.method)
-    ? undefined
-    : await request.arrayBuffer();
+  const incoming = METHODS_WITHOUT_BODY.has(request.method)
+    ? null
+    : request.body;
+  if (incoming && declaresOversizedBody(request)) return payloadTooLarge();
+  const body = incoming ? await readLimitedBody(incoming) : undefined;
+  if (body === null) return payloadTooLarge();
   try {
     const upstream = await fetchImpl(
       buildUpstreamUrl(request.url, path, apiBaseUrl),
@@ -67,6 +109,7 @@ export async function proxyToApi(
         method: request.method,
         headers: forwardedRequestHeaders(request),
         body,
+        signal: request.signal,
         redirect: 'manual',
         cache: 'no-store',
       },
