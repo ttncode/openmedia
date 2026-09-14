@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
 import styles from "./overlays.module.css";
@@ -28,6 +28,16 @@ export function AlertDialog({
 }: AlertDialogProps): ReactNode {
   const panel = useRef<HTMLElement>(null);
   useFocusTrap(panel, open);
+
+  useEffect(() => {
+    if (!open) return;
+    const closeOnEscape = (event: KeyboardEvent): void => {
+      if (event.key === "Escape") onCancel();
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [open, onCancel]);
+
   if (!open) return null;
   return createPortal(
     <div className={styles.layer} data-visible="true">

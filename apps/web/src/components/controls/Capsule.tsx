@@ -22,11 +22,11 @@ export function Capsule({
   const classes = [
     styles.capsule,
     styles[variant],
-    size === "large" ? styles.large : "",
-    className ?? "",
+    size === "large" ? styles.large : null,
+    className,
   ]
-    .join(" ")
-    .trim();
+    .filter(Boolean)
+    .join(" ");
   return (
     <button type={type} className={classes} {...rest}>
       {icon ? <Icon name={icon} size={size === "large" ? 18 : 16} /> : null}

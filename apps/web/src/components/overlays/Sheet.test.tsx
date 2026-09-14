@@ -1,7 +1,41 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Sheet } from "./Sheet";
+
+HTMLElement.prototype.setPointerCapture = function setPointerCapture(): void {};
+HTMLElement.prototype.hasPointerCapture =
+  function hasPointerCapture(): boolean {
+    return true;
+  };
+
+function mockMatchesPhone(matches: boolean): void {
+  vi.spyOn(window, "matchMedia").mockImplementation(
+    (query: string) =>
+      ({
+        matches,
+        media: query,
+        onchange: null,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      }) as unknown as MediaQueryList,
+  );
+}
+
+function dragHandle(
+  handle: HTMLElement,
+  distance: number,
+  elapsedMs: number,
+): void {
+  const now = vi.spyOn(performance, "now");
+  now.mockReturnValueOnce(0).mockReturnValueOnce(elapsedMs);
+  fireEvent.pointerDown(handle, { clientY: 0, pointerId: 1 });
+  fireEvent.pointerMove(handle, { clientY: distance, pointerId: 1 });
+  fireEvent.pointerUp(handle, { clientY: distance, pointerId: 1 });
+}
 
 describe("Sheet", () => {
   it("renders a labelled dialog, moves focus inside and closes on Escape", async () => {
@@ -30,5 +64,37 @@ describe("Sheet", () => {
       </Sheet>,
     );
     expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  describe("on phone", () => {
+    beforeEach(() => {
+      mockMatchesPhone(true);
+    });
+
+    it("closes when the handle is dragged past the dismiss distance", () => {
+      const onClose = vi.fn();
+      render(
+        <Sheet open onClose={onClose} title="Settings" labelledById="s">
+          <p>Body</p>
+        </Sheet>,
+      );
+      const handle = screen.getByRole("heading", { name: "Settings" })
+        .parentElement!.parentElement!;
+      dragHandle(handle, 200, 500);
+      expect(onClose).toHaveBeenCalledTimes(1);
+    });
+
+    it("does not close on a short drag", () => {
+      const onClose = vi.fn();
+      render(
+        <Sheet open onClose={onClose} title="Settings" labelledById="s">
+          <p>Body</p>
+        </Sheet>,
+      );
+      const handle = screen.getByRole("heading", { name: "Settings" })
+        .parentElement!.parentElement!;
+      dragHandle(handle, 20, 500);
+      expect(onClose).not.toHaveBeenCalled();
+    });
   });
 });
