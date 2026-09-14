@@ -83,7 +83,9 @@ def test_full_request_is_parsed() -> None:
         {"format": "gif"},
         {"format_id": "137; rm -rf /"},
         {"container": "avi"},
-        {"quality_height": 999},
+        {"quality_height": 0},
+        {"quality_height": 8641},
+        {"quality_height": True},
         {"format": "audio", "audio_format": "aac"},
         {"trim": {"start": 10, "end": 5}},
         {"trim": {"start": -1, "end": 5}},
@@ -102,6 +104,11 @@ def test_invalid_options_are_rejected(payload: dict[str, object]) -> None:
     with pytest.raises(ApiError) as caught:
         parse_download_options(payload)
     assert caught.value.code == "invalid_option"
+
+
+@pytest.mark.parametrize("height", [2250, 1920, 1350, 544])
+def test_accepts_source_heights_outside_the_common_ladder(height: int) -> None:
+    assert parse_download_options({"quality_height": height}).quality_height == height
 
 
 def test_options_serialize_for_the_job_payload() -> None:

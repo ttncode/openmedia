@@ -15,7 +15,7 @@ CONTAINERS = ("mp4", "mkv")
 AUDIO_FORMATS = ("mp3", "m4a", "opus", "flac", "wav")
 AUDIO_QUALITIES = ("320k", "best")
 SUBTITLE_MODES = ("embed", "srt")
-QUALITY_HEIGHTS = (2160, 1440, 1080, 720, 480, 360)
+MAX_QUALITY_HEIGHT = 8640
 
 
 @dataclass(frozen=True)
@@ -101,10 +101,10 @@ def _quality_height(payload: Mapping[str, object]) -> int | None:
     if (
         not isinstance(value, int)
         or isinstance(value, bool)
-        or value not in QUALITY_HEIGHTS
+        or not 1 <= value <= MAX_QUALITY_HEIGHT
     ):
         raise invalid_option(
-            "quality_height must be one of 2160, 1440, 1080, 720, 480, 360."
+            f"quality_height must be a whole number from 1 to {MAX_QUALITY_HEIGHT}."
         )
     return value
 
