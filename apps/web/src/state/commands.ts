@@ -28,6 +28,7 @@ export interface Commands {
 }
 
 const AUTH_REQUIRED = 'auth_required';
+const MAX_CONCURRENT_INFO = 3;
 
 let noticeSequence = 0;
 let itemSequence = 0;
@@ -37,6 +38,33 @@ const nextItemId = (): string =>
 
 function errorCode(error: unknown): string {
   return error instanceof ApiRequestError ? error.code : 'unknown_error';
+}
+
+function createLimiter(
+  limit: number,
+): <T>(task: () => Promise<T>) => Promise<T> {
+  let active = 0;
+  const waiting: Array<() => void> = [];
+  const acquire = (): Promise<void> => {
+    if (active < limit) {
+      active += 1;
+      return Promise.resolve();
+    }
+    return new Promise((resolve) => waiting.push(resolve));
+  };
+  const release = (): void => {
+    const next = waiting.shift();
+    if (next) next();
+    else active -= 1;
+  };
+  return async (task) => {
+    await acquire();
+    try {
+      return await task();
+    } finally {
+      release();
+    }
+  };
 }
 
 function needsSignIn(session: SessionInfo): boolean {
@@ -77,6 +105,8 @@ export function createCommands(
     }
   };
 
+  const limitInfo = createLimiter(MAX_CONCURRENT_INFO);
+
   const fetchLink = async (
     url: string,
     onPlaylist: PlaylistHandler,
@@ -84,7 +114,7 @@ export function createCommands(
     const id = nextItemId();
     dispatch({ type: 'fetch/started', id, url });
     try {
-      const info = await api.info(url);
+      const info = await limitInfo(() => api.info(url));
       if (info.is_playlist) return await onPlaylist(id, url);
       dispatch({ type: 'fetch/succeeded', id, url, info });
     } catch (error) {

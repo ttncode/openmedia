@@ -136,6 +136,38 @@ describe('commands', () => {
     expect(info).toHaveBeenCalledTimes(2);
   });
 
+  it('runs at most three info requests at once across links and playlist entries', async () => {
+    let running = 0;
+    let peak = 0;
+    const info = vi.spyOn(api, 'info').mockImplementation(async () => {
+      running += 1;
+      peak = Math.max(peak, running);
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      running -= 1;
+      return INFO;
+    });
+    vi.spyOn(api, 'playlist').mockResolvedValue({
+      title: 'Mix',
+      count: 5,
+      urls: [1, 2, 3, 4, 5].map((entry) => `https://youtu.be/p${entry}`),
+    });
+    const { commands, state } = harness();
+    await commands.fetchLinks(
+      [
+        'https://www.youtube.com/watch?v=a&list=PL1',
+        'https://youtu.be/a',
+        'https://youtu.be/b',
+        'https://youtu.be/c',
+      ],
+      'playlist',
+    );
+    expect(info).toHaveBeenCalledTimes(8);
+    expect(peak).toBe(3);
+    expect(state().items.filter((item) => item.type === 'ready')).toHaveLength(
+      8,
+    );
+  });
+
   it('adds the entries of a link that resolves to a playlist', async () => {
     const album = 'https://archive.org/details/fables';
     vi.spyOn(api, 'info').mockImplementation(async (url) =>
