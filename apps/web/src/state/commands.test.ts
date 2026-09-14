@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { api, ApiRequestError } from '@/lib/api/client';
-import { createCommands } from './commands';
+import { createCommands, POLL_TIMEOUT_MS } from './commands';
 import { initialState, reducer } from './reducer';
 import type { Action, AppState } from './types';
 
@@ -374,6 +374,35 @@ describe('commands', () => {
     expect(jobs).toHaveBeenCalledTimes(1);
     pending.resolve([]);
     await first;
+  });
+
+  it('gives up on a hung poll so later polls run again', async () => {
+    vi.useFakeTimers();
+    try {
+      vi.spyOn(api, 'storage').mockResolvedValue({
+        used_bytes: 0,
+        limit_bytes: null,
+        free_bytes: 1,
+      });
+      const hangUntilAborted = (signal?: AbortSignal): Promise<[]> =>
+        new Promise((_resolve, reject) => {
+          signal?.addEventListener('abort', () =>
+            reject(new ApiRequestError(0, 'api_unreachable', 'gone', null)),
+          );
+        });
+      const jobs = vi
+        .spyOn(api, 'jobs')
+        .mockImplementationOnce(hangUntilAborted)
+        .mockResolvedValue([]);
+      const { commands } = harness();
+      const hung = commands.syncJobs();
+      await vi.advanceTimersByTimeAsync(POLL_TIMEOUT_MS);
+      await hung;
+      await commands.syncJobs();
+      expect(jobs).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('keeps a removed job away when a poll from before the removal returns', async () => {

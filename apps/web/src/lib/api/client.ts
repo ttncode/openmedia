@@ -88,14 +88,15 @@ export const api = {
     requestJson('/playlist', jsonInit('POST', { url })),
   download: (request: DownloadRequest): Promise<{ job_id: string; job: Job }> =>
     requestJson('/download', jsonInit('POST', request)),
-  jobs: async (): Promise<Job[]> =>
-    (await requestJson<{ jobs: Job[] }>('/jobs')).jobs,
+  jobs: async (signal?: AbortSignal): Promise<Job[]> =>
+    (await requestJson<{ jobs: Job[] }>('/jobs', { signal })).jobs,
   removeJob: (jobId: string): Promise<void> =>
     requestVoid(`/jobs/${encodeURIComponent(jobId)}`, { method: 'DELETE' }),
   settings: (): Promise<RuntimeSettings> => requestJson('/settings'),
   updateSettings: (patch: Partial<RuntimeSettings>): Promise<RuntimeSettings> =>
     requestJson('/settings', jsonInit('PUT', patch)),
-  storage: (): Promise<StorageUsage> => requestJson('/storage'),
+  storage: (signal?: AbortSignal): Promise<StorageUsage> =>
+    requestJson('/storage', { signal }),
   cookies: (): Promise<CookieSummary> => requestJson('/cookies'),
   uploadCookies: (file: File): Promise<CookieSummary> => {
     const body = new FormData();

@@ -29,6 +29,7 @@ export interface Commands {
 
 const AUTH_REQUIRED = 'auth_required';
 const MAX_CONCURRENT_INFO = 3;
+export const POLL_TIMEOUT_MS = 15_000;
 
 let noticeSequence = 0;
 let itemSequence = 0;
@@ -172,9 +173,9 @@ export function createCommands(
 
   const keepLastStorage = (): void => undefined;
 
-  const refreshStorage = (): Promise<void> =>
+  const refreshStorage = (signal: AbortSignal): Promise<void> =>
     api
-      .storage()
+      .storage(signal)
       .then(
         (storage) => dispatch({ type: 'storage/loaded', storage }),
         keepLastStorage,
@@ -192,11 +193,17 @@ export function createCommands(
 
   const syncJobs = async (): Promise<void> => {
     const requestedAt = Date.now();
-    const storageRefresh = refreshStorage();
-    const jobs = withoutRemoved(await api.jobs(), requestedAt);
-    forgetRemovedBefore(requestedAt);
-    dispatch({ type: 'jobs/synced', jobs, requestedAt });
-    await storageRefresh;
+    const timeout = new AbortController();
+    const timer = setTimeout(() => timeout.abort(), POLL_TIMEOUT_MS);
+    try {
+      const storageRefresh = refreshStorage(timeout.signal);
+      const jobs = withoutRemoved(await api.jobs(timeout.signal), requestedAt);
+      forgetRemovedBefore(requestedAt);
+      dispatch({ type: 'jobs/synced', jobs, requestedAt });
+      await storageRefresh;
+    } finally {
+      clearTimeout(timer);
+    }
   };
 
   let outage = false;
