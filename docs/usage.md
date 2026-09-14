@@ -15,8 +15,9 @@ video or the whole playlist, up to the server's playlist item limit (see
 
 For video, choose a container (MP4 or MKV) and a quality from the list of
 available heights and their approximate file sizes. For audio, choose a
-format (MP3, M4A, Opus, FLAC or WAV). MP4 always re-encodes to H.264/AAC when
-needed for compatibility; MKV keeps the original streams.
+format (MP3, M4A, Opus, FLAC or WAV). MP4 picks H.264 video and AAC audio
+streams when the site offers them, the most widely compatible choice; MKV
+keeps whichever streams are best available, without that preference.
 
 ## Trimming
 

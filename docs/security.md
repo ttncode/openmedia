@@ -21,8 +21,9 @@ marked `Secure` whenever the request arrives over https (through the
 
 State-changing requests (anything other than GET, HEAD or OPTIONS) are
 rejected with `cross_site_request` when the browser's `Sec-Fetch-Site`
-header says the request came from another site, or when an `Origin` header
-is present and does not match the forwarded host. This stops another website
+header says the request came from another site or from another subdomain of
+the same site, or when an `Origin` header is present and does not match the
+forwarded host. This stops another website, including a sibling subdomain,
 from making download requests through a visitor's browser session.
 
 ## Rate limiting

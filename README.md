@@ -50,7 +50,7 @@ Open `http://localhost:8080`.
 ### Installer script
 
 ```bash
-curl -fsSL https://github.com/ttncode/openmedia/releases/latest/download/install.sh | sh
+curl -fsSL https://github.com/ttncode/openmedia/releases/latest/download/install.sh | bash
 ```
 
 ### From source

@@ -50,7 +50,7 @@ Mở `http://localhost:8080`.
 ### Script cài đặt
 
 ```bash
-curl -fsSL https://github.com/ttncode/openmedia/releases/latest/download/install.sh | sh
+curl -fsSL https://github.com/ttncode/openmedia/releases/latest/download/install.sh | bash
 ```
 
 ### Từ mã nguồn
