@@ -7,7 +7,11 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { PHONE_QUERY, useMediaQuery } from "@/hooks/useMediaQuery";
+import {
+  PHONE_QUERY,
+  TABLET_QUERY,
+  useMediaQuery,
+} from "@/hooks/useMediaQuery";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { linkFromShare, parseLinks } from "@/lib/links";
 import { useStore } from "@/state/StoreProvider";
@@ -38,6 +42,7 @@ export function AppShell(): ReactNode {
   const { t } = useI18n();
   const { state, dispatch, commands } = useStore();
   const isPhone = useMediaQuery(PHONE_QUERY);
+  const isTablet = useMediaQuery(TABLET_QUERY);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const sentinel = useRef<HTMLDivElement>(null);
   const scroller = useRef<HTMLDivElement>(null);
@@ -103,6 +108,15 @@ export function AppShell(): ReactNode {
     return () => document.removeEventListener("paste", pasteAnywhere);
   }, [submitLinks]);
 
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    const closeOnEscape = (event: KeyboardEvent): void => {
+      if (event.key === "Escape") setSidebarOpen(false);
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [sidebarOpen]);
+
   const openShortcuts = useCallback(() => setShortcutsOpen(true), []);
   const overlayOpen =
     settingsOpen || shortcutsOpen || clearAlertOpen || inspectorSheetOpen;
@@ -134,6 +148,7 @@ export function AppShell(): ReactNode {
       data-scrolled={scrolled}
     >
       <Sidebar
+        inert={isTablet && !sidebarOpen}
         onOpenSettings={() => openSettings()}
         onNavigate={() => setSidebarOpen(false)}
       />

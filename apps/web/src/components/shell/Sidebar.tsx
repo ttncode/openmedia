@@ -23,9 +23,11 @@ const FILTER_ITEMS: ReadonlyArray<{
 ];
 
 export function Sidebar({
+  inert,
   onOpenSettings,
   onNavigate,
 }: {
+  inert: boolean;
   onOpenSettings: () => void;
   onNavigate: () => void;
 }): ReactNode {
@@ -49,7 +51,11 @@ export function Sidebar({
       )
     : 0;
   return (
-    <aside className={styles.sidebar} aria-label={t.nav.downloads}>
+    <aside
+      className={styles.sidebar}
+      aria-label={t.nav.downloads}
+      inert={inert}
+    >
       <div className={styles.sidebarPanel}>
         <div className={styles.brand}>
           <BrandMark />
