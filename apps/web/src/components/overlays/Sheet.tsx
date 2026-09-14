@@ -27,6 +27,10 @@ interface SheetProps {
   footer?: ReactNode;
 }
 
+function isOnButton(target: EventTarget): boolean {
+  return target instanceof Element && target.closest("button") !== null;
+}
+
 function useStagedPresence(open: boolean): {
   mounted: boolean;
   visible: boolean;
@@ -85,7 +89,7 @@ export function Sheet({
   if (!mounted) return null;
 
   const beginDrag = (event: PointerEvent<HTMLDivElement>): void => {
-    if (!isPhone) return;
+    if (!isPhone || isOnButton(event.target)) return;
     drag.current = {
       startY: event.clientY,
       lastY: event.clientY,

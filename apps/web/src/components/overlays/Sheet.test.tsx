@@ -84,6 +84,21 @@ describe("Sheet", () => {
       expect(onClose).toHaveBeenCalledTimes(1);
     });
 
+    it("leaves the pointer with the Done button so its click lands", () => {
+      const onClose = vi.fn();
+      const capture = vi.spyOn(HTMLElement.prototype, "setPointerCapture");
+      render(
+        <Sheet open onClose={onClose} title="Settings" labelledById="s">
+          <p>Body</p>
+        </Sheet>,
+      );
+      const done = screen.getByRole("button", { name: "Done" });
+      fireEvent.pointerDown(done, { clientY: 0, pointerId: 1 });
+      expect(capture).not.toHaveBeenCalled();
+      fireEvent.click(done);
+      expect(onClose).toHaveBeenCalledTimes(1);
+    });
+
     it("does not close on a short drag", () => {
       const onClose = vi.fn();
       render(
