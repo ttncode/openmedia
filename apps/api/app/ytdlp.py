@@ -243,12 +243,19 @@ def _last_line(output: str) -> str:
     return lines[-1] if lines else "yt-dlp failed without output"
 
 
-def error_from_output(output: str) -> ApiError:
-    line = _last_line(output)
-    lowered = line.lower()
+def known_error(output: str) -> ApiError | None:
+    lowered = output.lower()
     for fragment, code, message in ERROR_PATTERNS:
         if fragment in lowered:
             return ApiError(400, code, message)
+    return None
+
+
+def error_from_output(output: str) -> ApiError:
+    line = _last_line(output)
+    known = known_error(line)
+    if known is not None:
+        return known
     detail = line.removeprefix("ERROR:").strip()[:MAX_ERROR_MESSAGE_LENGTH]
     return ApiError(400, "extractor_error", detail)
 

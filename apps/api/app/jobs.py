@@ -24,6 +24,7 @@ from .ytdlp import (
     DownloadRequest,
     build_download_command,
     error_from_output,
+    known_error,
     ytdlp_environment,
 )
 
@@ -491,9 +492,10 @@ class JobManager:
             return
         files = collect_files(job_dir, job.title, job.job_id)
         if not files:
-            self._fail(
-                job, "extractor_error", "The download finished but no file was found."
+            error = known_error(outcome.output) or ApiError(
+                400, "extractor_error", "The download finished but no file was found."
             )
+            self._fail(job, error.code, error.message)
             return
         job.files, job.status, job.progress = files, JobStatus.DONE, 100.0
 

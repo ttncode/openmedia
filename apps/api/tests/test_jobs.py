@@ -130,6 +130,20 @@ def test_missing_output_file_is_an_error(settings: Settings) -> None:
     assert job.error_code == "extractor_error"
 
 
+def test_max_filesize_abort_with_a_clean_exit_is_too_large(settings: Settings) -> None:
+    script = ProcessScript(
+        [
+            "[download] File is larger than max-filesize (5000 bytes > 10 bytes). Aborting.",
+            "[info] finished",
+        ],
+        {},
+    )
+    manager = make_manager(settings, script)
+    job = manager.submit(URL, "x", parse_download_options({}))
+    assert manager.wait_until_idle(5)
+    assert (job.status, job.error_code) == (JobStatus.ERROR, "too_large")
+
+
 def test_unexpected_error_releases_the_slot_and_marks_the_job_failed(
     settings: Settings,
 ) -> None:
