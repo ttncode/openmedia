@@ -1,7 +1,9 @@
 "use client";
 
 import {
+  useEffect,
   useLayoutEffect,
+  useRef,
   type FormEvent,
   type KeyboardEvent,
   type ReactNode,
@@ -22,15 +24,24 @@ import styles from "./importer.module.css";
 
 const MAX_FIELD_HEIGHT = 132;
 const DEFAULT_PLAYLIST_LIMIT = 50;
-const PLATFORM_LABELS: Record<PlatformId, { label: string; icon: IconName }> = {
-  youtube: { label: "YouTube", icon: "youtube" },
-  tiktok: { label: "TikTok", icon: "tiktok" },
-  instagram: { label: "Instagram", icon: "instagram" },
-  soundcloud: { label: "SoundCloud", icon: "soundcloud" },
-  x: { label: "X", icon: "xLogo" },
-  facebook: { label: "Facebook", icon: "facebook" },
-  vimeo: { label: "Vimeo", icon: "vimeo" },
-  other: { label: "Web", icon: "globe" },
+const PLATFORM_ICONS: Record<PlatformId, IconName> = {
+  youtube: "youtube",
+  tiktok: "tiktok",
+  instagram: "instagram",
+  soundcloud: "soundcloud",
+  x: "xLogo",
+  facebook: "facebook",
+  vimeo: "vimeo",
+  other: "globe",
+};
+const PLATFORM_NAMES: Record<Exclude<PlatformId, "other">, string> = {
+  youtube: "YouTube",
+  tiktok: "TikTok",
+  instagram: "Instagram",
+  soundcloud: "SoundCloud",
+  x: "X",
+  facebook: "Facebook",
+  vimeo: "Vimeo",
 };
 
 interface ImporterProps {
@@ -60,6 +71,7 @@ export function Importer({
   const links = parseLinks(value);
   const platforms = detectPlatforms(links);
   const showPlaylistChoice = links.some(hasPlaylist);
+  const fieldRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
     const field = inputRef.current;
@@ -68,8 +80,28 @@ export function Importer({
     field.style.height = `${Math.min(field.scrollHeight, MAX_FIELD_HEIGHT)}px`;
   }, [value, inputRef]);
 
+  const platformLabel = (platform: PlatformId): string =>
+    platform === "other" ? t.importer.platformOther : PLATFORM_NAMES[platform];
+
+  const shakeField = (): void => {
+    const field = fieldRef.current;
+    if (!field) return;
+    field.classList.remove(styles.shaking);
+    void field.offsetWidth;
+    field.classList.add(styles.shaking);
+  };
+
+  useEffect(() => {
+    const field = fieldRef.current;
+    if (!field) return;
+    const clearShake = (): void => field.classList.remove(styles.shaking);
+    field.addEventListener("animationend", clearShake);
+    return () => field.removeEventListener("animationend", clearShake);
+  }, []);
+
   const submit = (): void => {
     if (links.length === 0) {
+      shakeField();
       onInvalid?.();
       return;
     }
@@ -88,7 +120,11 @@ export function Importer({
   };
 
   const handleFormKeyDown = (event: KeyboardEvent<HTMLFormElement>): void => {
+    const isPlainButton =
+      event.target instanceof HTMLButtonElement &&
+      event.target.getAttribute("role") !== "radio";
     if (
+      isPlainButton ||
       event.key !== "Enter" ||
       event.shiftKey ||
       event.nativeEvent.isComposing
@@ -113,7 +149,7 @@ export function Importer({
       <label className="visually-hidden" htmlFor="links">
         {t.importer.label}
       </label>
-      <div className={styles.field}>
+      <div ref={fieldRef} className={styles.field}>
         <Icon name="link" size={18} />
         <textarea
           id="links"
@@ -148,8 +184,8 @@ export function Importer({
         <div className={styles.chips} aria-live="polite">
           {platforms.map((platform) => (
             <span key={platform} className={styles.chip}>
-              <Icon name={PLATFORM_LABELS[platform].icon} size={14} />
-              {PLATFORM_LABELS[platform].label}
+              <Icon name={PLATFORM_ICONS[platform]} size={14} />
+              {platformLabel(platform)}
             </span>
           ))}
         </div>

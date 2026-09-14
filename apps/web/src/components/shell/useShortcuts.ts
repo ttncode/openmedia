@@ -12,13 +12,16 @@ function isTyping(target: EventTarget | null): boolean {
 export function useShortcuts({
   inputRef,
   onShortcuts,
+  overlayOpen,
 }: {
   inputRef: RefObject<HTMLTextAreaElement | null>;
   onShortcuts: () => void;
+  overlayOpen: boolean;
 }): void {
   useEffect(() => {
     const handle = (event: KeyboardEvent): void => {
       if (
+        overlayOpen ||
         isTyping(event.target) ||
         event.metaKey ||
         event.ctrlKey ||
@@ -35,5 +38,5 @@ export function useShortcuts({
     };
     document.addEventListener('keydown', handle);
     return () => document.removeEventListener('keydown', handle);
-  }, [inputRef, onShortcuts]);
+  }, [inputRef, onShortcuts, overlayOpen]);
 }

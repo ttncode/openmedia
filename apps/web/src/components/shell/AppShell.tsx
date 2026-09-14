@@ -29,15 +29,9 @@ import { TabBar } from "./TabBar";
 import { Toolbar } from "./Toolbar";
 import { useShortcuts } from "./useShortcuts";
 
-function takeSharedLink(): string | null {
+function readSharedLink(): string | null {
   const params = new URLSearchParams(window.location.search);
-  const link = linkFromShare({
-    url: params.get("url"),
-    text: params.get("text"),
-  });
-  if (params.size > 0)
-    window.history.replaceState(null, "", window.location.pathname);
-  return link;
+  return linkFromShare({ url: params.get("url"), text: params.get("text") });
 }
 
 export function AppShell(): ReactNode {
@@ -48,7 +42,7 @@ export function AppShell(): ReactNode {
   const sentinel = useRef<HTMLDivElement>(null);
   const scroller = useRef<HTMLDivElement>(null);
   const [sharedLink] = useState<string | null>(() =>
-    typeof window === "undefined" ? null : takeSharedLink(),
+    typeof window === "undefined" ? null : readSharedLink(),
   );
   const [linkText, setLinkText] = useState("");
   const [scope, setScope] = useState<PlaylistScope>("single");
@@ -68,6 +62,11 @@ export function AppShell(): ReactNode {
     },
     [commands, dispatch],
   );
+
+  useEffect(() => {
+    if (window.location.search)
+      window.history.replaceState(null, "", window.location.pathname);
+  }, []);
 
   useEffect(() => {
     if (!sharedLink) return;
@@ -105,7 +104,9 @@ export function AppShell(): ReactNode {
   }, [submitLinks]);
 
   const openShortcuts = useCallback(() => setShortcutsOpen(true), []);
-  useShortcuts({ inputRef, onShortcuts: openShortcuts });
+  const overlayOpen =
+    settingsOpen || shortcutsOpen || clearAlertOpen || inspectorSheetOpen;
+  useShortcuts({ inputRef, onShortcuts: openShortcuts, overlayOpen });
 
   const openSettings = (cookies = false): void => {
     setFocusCookies(cookies);

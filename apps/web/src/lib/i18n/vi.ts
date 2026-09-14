@@ -28,6 +28,7 @@ export const vi: Messages = {
     playlistAll: (count: number): string =>
       `Cả playlist (tối đa ${count} video)`,
     dropTitle: 'Thả liên kết để thêm vào hàng đợi',
+    platformOther: 'Trang web',
     installHint:
       'Cài OpenMedia lên màn hình chính để chia sẻ liên kết thẳng từ ứng dụng khác.',
     dismissInstallHint: 'Ẩn gợi ý cài đặt',

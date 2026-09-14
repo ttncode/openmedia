@@ -26,6 +26,7 @@ export const en = {
     playlistAll: (count: number): string =>
       `Whole playlist (up to ${count} videos)`,
     dropTitle: 'Drop links to add them to the queue',
+    platformOther: 'Web',
     installHint:
       'Install OpenMedia on your home screen to share links straight from other apps.',
     dismissInstallHint: 'Hide install tip',
