@@ -152,6 +152,10 @@ def test_info_command_ends_with_separator_and_url() -> None:
             "conversion_failed",
         ),
         ("ERROR: Postprocessing: Conversion failed!", "conversion_failed"),
+        (
+            "ERROR: unable to write data: [Errno 28] No space left on device",
+            "storage_full",
+        ),
         ("ERROR: something else broke", "extractor_error"),
     ],
 )

@@ -211,7 +211,8 @@ large playlist cannot take every gunicorn thread.
 Error mapping from the last stderr line: "Sign in to confirm" becomes `bot_check`,
 "Private video" `private_video`, "not available in your country" `geo_blocked`,
 "Video unavailable" `unavailable`, "Unsupported URL" `unsupported_url`,
-"File is larger than max-filesize" `too_large`; anything else `extractor_error`.
+"File is larger than max-filesize" `too_large`, "No space left on device" `storage_full`;
+anything else `extractor_error`.
 yt-dlp exits 0 after a max-filesize abort, so a clean exit that leaves no file searches
 the whole output tail for these phrases before falling back to `extractor_error`.
 

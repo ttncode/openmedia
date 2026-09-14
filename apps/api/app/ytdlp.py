@@ -45,6 +45,11 @@ ERROR_PATTERNS = (
         "too_large",
         "The file is larger than the configured size limit.",
     ),
+    (
+        "no space left on device",
+        "storage_full",
+        "The server ran out of disk space. Remove finished downloads and try again.",
+    ),
     ("conversion failed", "conversion_failed", CONVERSION_FAILED_MESSAGE),
     ("error opening output file", "conversion_failed", CONVERSION_FAILED_MESSAGE),
     ("could not write header", "conversion_failed", CONVERSION_FAILED_MESSAGE),
