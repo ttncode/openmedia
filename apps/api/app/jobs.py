@@ -38,6 +38,7 @@ SUBTITLE_SUFFIXES = frozenset({".srt", ".vtt", ".ass", ".lrc"})
 PARTIAL_SUFFIXES = frozenset({".part", ".ytdl", ".temp"})
 WATCHDOG_INTERVAL_SECONDS = 1.0
 TERMINATED_EXIT_CODE = -15
+KILL_GRACE_SECONDS = 5.0
 IDLE_POLL_INTERVAL_SECONDS = 0.005
 PROCESSING_STALL_MULTIPLIER = 10
 
@@ -90,8 +91,18 @@ class SubprocessHandle:
         return self._process.wait()
 
     def terminate(self) -> None:
+        self._signal_group(signal.SIGTERM)
+        follow_up = threading.Timer(KILL_GRACE_SECONDS, self._kill_if_running)
+        follow_up.daemon = True
+        follow_up.start()
+
+    def _kill_if_running(self) -> None:
+        if self._process.poll() is None:
+            self._signal_group(signal.SIGKILL)
+
+    def _signal_group(self, signal_number: signal.Signals) -> None:
         try:
-            os.killpg(self._process.pid, signal.SIGTERM)
+            os.killpg(self._process.pid, signal_number)
         except ProcessLookupError:
             return
 

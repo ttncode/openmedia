@@ -1,3 +1,5 @@
+import os
+import signal
 import threading
 import time
 from collections.abc import Callable, Iterator, Mapping, Sequence
@@ -9,7 +11,15 @@ import pytest
 
 from app.config import Settings
 from app.errors import ApiError
-from app.jobs import Job, JobManager, JobRuntime, JobStatus, StallWatchdog, utc_now
+from app.jobs import (
+    Job,
+    JobManager,
+    JobRuntime,
+    JobStatus,
+    StallWatchdog,
+    SubprocessHandle,
+    utc_now,
+)
 from app.settings_store import RuntimeSettings, SettingsStore
 from app.validation import parse_download_options
 
@@ -292,6 +302,21 @@ def test_watchdog_gives_processing_jobs_more_time_before_stalling() -> None:
     assert not handle.terminated.is_set()
     assert wait_until(lambda: handle.terminated.is_set(), timeout=2.0)
     watchdog.stop()
+
+
+def test_terminate_kills_a_process_that_ignores_sigterm(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("app.jobs.KILL_GRACE_SECONDS", 0.2)
+    script = 'trap "" TERM; echo ready; exec sleep 3'
+    handle = SubprocessHandle(["sh", "-c", script], dict(os.environ))
+    assert next(handle.output_lines()).strip() == "ready"
+    handle.terminate()
+    exit_codes: list[int] = []
+    waiter = threading.Thread(target=lambda: exit_codes.append(handle.wait()))
+    waiter.start()
+    waiter.join(2)
+    assert exit_codes == [-signal.SIGKILL]
 
 
 def test_remove_finished_before_cutoff(settings: Settings) -> None:

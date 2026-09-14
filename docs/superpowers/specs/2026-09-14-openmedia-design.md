@@ -233,6 +233,8 @@ queued ──slot free──▶ downloading ──post-processing line──▶ 
   post-processing to 99, done to 100. Progress never decreases.
 - Cancel terminates the process group, removes the job directory and marks `cancelled`.
 - Stall: no output line for `OPENMEDIA_STALL_TIMEOUT_SECONDS` stops the job with `timeout`.
+- Stopping a process, for cancel or stall, sends SIGTERM to its process group and SIGKILL
+  5 seconds later if it is still running.
 - On success the media file is the largest non-subtitle file; the download name is the
   sanitized title (100 characters, reclip's rule, control characters removed) plus
   extension; subtitle files are
